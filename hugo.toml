@@ -7,15 +7,19 @@ disqusShortname = ""
 # Enable Google Analytics by entering your tracking code
 googleAnalytics = "GTM-5X7GT3NK"
 
+
+
 [params]
+  customCSS = ["css/custom.css"]
+
   # Style options: default (pink), blue, green, pink, red, sea, violet
   # Use custom.css for your custom styling
   style = "default"
-  description = "Describe your website"
-  copyright = "&copy;2016 Your name or company"
+  description = "Creative merchandise for programmers, developers, engineers, geeks and researchers"
+  copyright = "&copy;2016 Shital Shah"
   sidebarAbout = [
-    "I am a creative illustrator and graphic designer with more than 10 years of experience.",
-    "Originally from Toronto, currently based in London."
+    "We are a small enterprise busy making creative goodies for programmers, developers, engineers, geeks and researchers.",
+    "Designed in Seattle, USA."
   ]
   # Contact page
      # Since this template is static, the contact form uses www.formspree.io as a
@@ -29,7 +33,7 @@ googleAnalytics = "GTM-5X7GT3NK"
      # - send a dummy email yourself to confirm your account
      # - click the confirm link in the email from www.formspree.io
      # - you're done. Happy mailing!
-  email = "you@yoursite.com"
+  email = "xoqobzvk"
 
     # Optional Matomo analytics (formerly piwik)
       # [params.analytics.matomo]
@@ -55,14 +59,19 @@ googleAnalytics = "GTM-5X7GT3NK"
   url = "contact/"
 
   [params.social]
-  facebook      = "full page or profile url in facebook"
-  googleplus    = "full profile url in googleplus"
-  email         = "email@example.com"
-  twitter       = "full profile url in twitter"
-  linkedin      = "full profile url in linkedin"
-  stackoverflow = "full profile url in stackoverflow"
-  instagram     = "full profile url in instagram"
-  github        = "full profile url in github"
-  gitlab        = "full profile url in gitlab"
-  youtube       = "full profile url in youtube"
-  whatsapp      = "wa.me service link"
+  #facebook      = "full page or profile url in facebook"
+  #googleplus    = "full profile url in googleplus"
+  #linkedin      = "full profile url in linkedin"
+  #stackoverflow = "full profile url in stackoverflow"
+  #github        = "full profile url in github"
+  #gitlab        = "full profile url in gitlab"
+  #youtube       = "full profile url in youtube"
+  #whatsapp      = "wa.me service link"
+  email         = "sytelus+gunis@gmail.com"
+  twitter       = "https://twitter.com/sytelus"
+  instagram     = "https://instagram.com/sytelus"
+
+  [markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
