@@ -7,7 +7,7 @@ We are a small business specializing in creative t-shirts, coffee mugs and other
 
 We take our art very seriously! And we are picky as nobody's business!!
 
-Our design process often lasts for weeks as we go through some painstaking details. We want our designs to be eyecatching but subtle and humourous but educational, all at the same time.
+Our design process often lasts for weeks as we go through some painstaking details. We want our designs to be eye catching but subtle and fun but educational, all at the same time.
 
 Yes, we know that's a tough order!
 

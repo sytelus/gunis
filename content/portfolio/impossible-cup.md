@@ -1,6 +1,6 @@
 +++
 date = "2016-11-05T19:41:01+05:30"
-title = "Impossible Cup"
+title = "Impossible Geometry Mug"
 draft = false
 image = "img/portfolio/impossible-cup/impossible-cup.jpeg"
 showonlyimage = false
