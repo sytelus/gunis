@@ -1,5 +1,5 @@
 baseurl = "https://www.gunis.ai/"
-title = "Guni's"
+title = "Gunis"
 theme = "creative-portfolio"
 languageCode = "en-us"
 # Enable comments by entering your Disqus shortname
@@ -18,7 +18,7 @@ googleAnalytics = "GTM-5X7GT3NK"
   # Use custom.css for your custom styling
   style = "default"
   description = "Creative merchandise for programmers, developers, engineers, geeks and researchers"
-  copyright = "&copy;2016 Shital Shah"
+  copyright = "&copy;2025 Gunis LLC. All rights reserved."
   sidebarAbout = [
     "We are a small enterprise busy making creative goodies for programmers, developers, engineers, geeks and researchers.",
     "Designed in Seattle, USA."
@@ -69,7 +69,7 @@ googleAnalytics = "GTM-5X7GT3NK"
   #gitlab        = "full profile url in gitlab"
   #youtube       = "full profile url in youtube"
   #whatsapp      = "wa.me service link"
-  email         = "sytelus+gunis@gmail.com"
+  email         = "info@gunis.ai"
   twitter       = "https://twitter.com/sytelus"
   instagram     = "https://instagram.com/sytelus"
 
