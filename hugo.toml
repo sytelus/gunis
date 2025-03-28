@@ -7,7 +7,9 @@ disqusShortname = ""
 # Enable Google Analytics by entering your tracking code
 googleAnalytics = "GTM-5X7GT3NK"
 
-
+[caches]
+  [caches.images]
+    dir = ':cacheDir/images'
 
 [params]
   customCSS = ["css/custom.css"]
