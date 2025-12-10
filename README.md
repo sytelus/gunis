@@ -12,11 +12,13 @@ Static site for Gunis built with Hugo extended v0.145.0.
 - Update title/description as needed and set `draft = false` when the page is ready to publish.
 
 ## Preview before deploy
-- Start the live server (includes drafts) with `hugo server -D`.
+- Quick start: `./view.sh` (runs `hugo server -D --buildFuture --disableFastRender` and auto-fetches theme submodules).
+- Manual: start the live server (includes drafts) with `hugo server -D`.
 - Open the localhost URL Hugo prints (default `http://localhost:1313/`); it hot-reloads on save. Stop with `Ctrl+C`.
 
 ## Deploy to website
-- Build an optimized production bundle: `hugo --gc --minify --cleanDestinationDir`.
+- Quick deploy: `./deploy.sh` (ensures submodules, then runs `hugo --gc --minify --cleanDestinationDir`).
+- Build manually if you prefer: `hugo --gc --minify --cleanDestinationDir`.
 - The generated site lives in `public/`; sync that directory to your host (e.g., S3, GitHub Pages, or your web root at gunis.ai).
 - If you later add a `deployment` target to `hugo.toml`, you can deploy directly with `hugo deploy --confirm`.
 
