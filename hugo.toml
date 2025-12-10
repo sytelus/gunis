@@ -1,7 +1,9 @@
 baseurl = "https://www.gunis.ai/"
 title = "Gunis"
-theme = "creative-portfolio"
+# Theme cascade: try Hugo Narrow first; fall back to Creative Portfolio for easy rollback
+theme = ["hugo-narrow", "creative-portfolio"]
 languageCode = "en-us"
+
 # Enable comments by entering your Disqus shortname
 disqusShortname = ""
 # Enable Google Analytics by entering your tracking code
@@ -18,6 +20,7 @@ googleAnalytics = "GTM-5X7GT3NK"
   # Use custom.css for your custom styling
   style = "default"
   description = "Creative merchandise for programmers, developers, engineers, geeks and researchers"
+  keywords = ["t-shirt", "merch", "developer", "engineer", "geek", "gift", "graphic tee", "tech apparel"]
   copyright = "&copy;2025 Gunis LLC. All rights reserved."
   sidebarAbout = [
     "We are a small enterprise busy making creative goodies for programmers, developers, engineers, geeks and researchers.",
@@ -46,7 +49,7 @@ googleAnalytics = "GTM-5X7GT3NK"
       #  # Optional integrity check hash
       #  hash = ""
 
-  # Nav links in the side bar
+  # Nav links in the side bar (legacy creative-portfolio)
   [[params.navlinks]]
   name = "Home"
   url = "portfolio/"
@@ -73,7 +76,71 @@ googleAnalytics = "GTM-5X7GT3NK"
   twitter       = "https://twitter.com/sytelus"
   instagram     = "https://instagram.com/sytelus"
 
-  [markup]
+  # Additional site/meta used by Hugo Narrow
+  images = ["/img/portfolio/et-al/et-al.jpg"]
+  defaultAuthor = "Gunis"
+  language = "en-US"
+  shortName = "Gunis"
+
+[params.author]
+name = "Gunis"
+title = "Creative merchandise for programmers, engineers & researchers"
+description = "Premium graphic tees and merch with clean, modern art for tech folks."
+avatar = "/img/logo.png"
+  [[params.author.social]]
+  name = "Twitter"
+  url = "https://twitter.com/sytelus"
+  icon = "twitter"
+  [[params.author.social]]
+  name = "Instagram"
+  url = "https://instagram.com/sytelus"
+  icon = "instagram"
+  [[params.author.social]]
+  name = "Email"
+  url = "mailto:info@gunis.ai"
+  icon = "email"
+
+[params.home]
+recentPostsCount = 6
+
+[params.home_custom]
+enabled = false
+
+[params.logo]
+image = ""
+link = "/"
+
+[params.favicon]
+svg = ""
+
+[menu]
+  [[menu.main]]
+  name = "Catalog"
+  url = "/portfolio/"
+  weight = 1
+  [[menu.main]]
+  name = "About"
+  url = "/about/"
+  weight = 2
+  [[menu.main]]
+  name = "Contact"
+  url = "/contact/"
+  weight = 3
+
+  [[menu.social]]
+  name = "Twitter"
+  url = "https://twitter.com/sytelus"
+  weight = 1
+  [[menu.social]]
+  name = "Instagram"
+  url = "https://instagram.com/sytelus"
+  weight = 2
+  [[menu.social]]
+  name = "Email"
+  url = "mailto:info@gunis.ai"
+  weight = 3
+
+[markup]
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true

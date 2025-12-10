@@ -1,5 +1,6 @@
 +++
 image = "img/portfolio/mondrian-world-map/mondrian-world-map.jpg"
+cover = "img/portfolio/mondrian-world-map/mondrian-world-map.jpg"
 showonlyimage = false
 date = "2025-12-08T10:00:00+05:30"
 title = "Mondrian World Map Tee"
