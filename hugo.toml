@@ -1,7 +1,7 @@
 baseurl = "https://www.gunis.ai/"
 title = "Gunis"
-# Theme cascade: try Hugo Narrow first; fall back to Creative Portfolio for easy rollback
-theme = ["hugo-narrow", "creative-portfolio"]
+# Default theme restored to Creative Portfolio (Hugo Narrow kept as optional secondary)
+theme = "creative-portfolio"
 languageCode = "en-us"
 
 # Enable comments by entering your Disqus shortname

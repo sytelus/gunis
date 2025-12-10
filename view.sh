@@ -8,4 +8,11 @@ cd "$ROOT_DIR"
 # Ensure theme submodules are present (no-op if already fetched).
 git submodule update --init --recursive
 
-hugo server -D --buildFuture --disableFastRender --bind 127.0.0.1 --port 1313 "$@"
+# Allow version switching via HUGO_BIN; default to local 0.145 build (Creative Portfolio).
+HUGO_BIN="${HUGO_BIN:-./bin/hugo-145}"
+if [ ! -x "$HUGO_BIN" ]; then
+  echo "HUGO_BIN not found/executable at '$HUGO_BIN', falling back to system 'hugo'" >&2
+  HUGO_BIN="$(command -v hugo)"
+fi
+
+"$HUGO_BIN" server -D --buildFuture --disableFastRender --bind 127.0.0.1 --port 1313 "$@"
