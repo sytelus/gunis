@@ -2,7 +2,7 @@
 image = "img/portfolio/legalize-math-charm/legalize-math-charm.jpg"
 cover = "img/portfolio/legalize-math-charm/legalize-math-charm.jpg"
 showonlyimage = false
-date = "2025-12-10T10:30:00+05:30"
+date = "2025-12-09T10:30:00+00:00"
 title = "Legalize Math - The Charm Edition"
 draft = false
 weight = 7

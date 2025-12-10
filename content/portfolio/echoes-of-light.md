@@ -2,7 +2,7 @@
 image = "img/portfolio/echoes-of-light/echoes-of-light.jpg"
 cover = "img/portfolio/echoes-of-light/echoes-of-light.jpg"
 showonlyimage = false
-date = "2025-12-10T11:10:00+05:30"
+date = "2025-12-09T11:10:00+00:00"
 title = "The Echoes of Light"
 draft = false
 weight = 11

@@ -2,7 +2,7 @@
 image = "img/portfolio/celestial-glaze/celestial-glaze.jpg"
 cover = "img/portfolio/celestial-glaze/celestial-glaze.jpg"
 showonlyimage = false
-date = "2025-12-10T10:40:00+05:30"
+date = "2025-12-09T10:40:00+00:00"
 title = "Celestial Glaze from The Mid-Qing Dynasty"
 draft = false
 weight = 8

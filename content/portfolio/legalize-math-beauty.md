@@ -2,7 +2,7 @@
 image = "img/portfolio/legalize-math-beauty/legalize-math-beauty.jpg"
 cover = "img/portfolio/legalize-math-beauty/legalize-math-beauty.jpg"
 showonlyimage = false
-date = "2025-12-10T10:10:00+05:30"
+date = "2025-12-09T10:10:00+00:00"
 title = "Legalize Math - The Beauty Edition"
 draft = false
 weight = 5

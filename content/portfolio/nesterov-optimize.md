@@ -2,7 +2,7 @@
 image = "img/portfolio/nesterov-optimize/nesterov-optimize.jpg"
 cover = "img/portfolio/nesterov-optimize/nesterov-optimize.jpg"
 showonlyimage = false
-date = "2025-12-10T10:00:00+05:30"
+date = "2025-12-09T10:00:00+00:00"
 title = "Nesterov Optimize Tee"
 draft = false
 weight = 4

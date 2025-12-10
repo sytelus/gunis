@@ -2,7 +2,7 @@
 image = "img/portfolio/legalize-math-truth/legalize-math-truth.jpg"
 cover = "img/portfolio/legalize-math-truth/legalize-math-truth.jpg"
 showonlyimage = false
-date = "2025-12-10T10:20:00+05:30"
+date = "2025-12-09T10:20:00+00:00"
 title = "Legalize Math - The Truth Edition"
 draft = false
 weight = 6
