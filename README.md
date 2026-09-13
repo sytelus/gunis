@@ -1,39 +1,63 @@
-# Gunis
-Static site for Gunis built with Hugo extended v0.145.0 (Hugo Narrow requires ≥0.146.0; see version switching below).
+# Guni
 
-## Fresh setup (first clone)
-- Clone with submodules so the theme is present: `git clone --recursive <repo-url>` (or run `git submodule update --init --recursive` after cloning).
-- Verify Hugo extended is installed and at least v0.145.0 (Hugo Narrow needs ≥0.146.0; see below if you switch).
-- From the repo root, start the dev server (shows drafts): `hugo server -D` and open the printed localhost URL.
+The coming-soon website for [guni.ai](https://guni.ai): advancing learning technologies for humans and AI.
 
-## Add new content
-- From the repo root run `hugo new content/portfolio/<slug>.md` to scaffold a page with front matter.
-- Drop product images in `static/img/portfolio/<slug>/` and point the `image` field in the new file at the hero asset.
-- Update title/description as needed and set `draft = false` when the page is ready to publish.
+**Learning, in a new light.** An interactive ceramic-and-glass sculpture pairs with an orange reciprocal-loop mark, Instrument Sans, and Instrument Serif. A quiet **Side quests / Merch** link opens the preserved product collection; **Say hello** opens [shital.com](https://shital.com).
 
-## Preview before deploy
-- Quick start: `./view.sh` (runs `hugo server -D --buildFuture --disableFastRender` and auto-fetches theme submodules).
-- Manual: start the live server (includes drafts) with `hugo server -D`.
-- Open the localhost URL Hugo prints (default `http://localhost:1313/`); it hot-reloads on save. Stop with `Ctrl+C`.
+## Run locally
 
-## Deploy (GitHub Pages)
-- Deployment is automated via GitHub Actions: every push to `main` triggers `.github/workflows/hugo.yaml` (“Deploy Hugo site to Pages”) which builds with Hugo extended `v0.145.0` and publishes to the `github-pages` environment.
-- Custom domain: Settings ▸ Pages is configured to `www.gunis.ai` with “Enforce HTTPS” enabled (keep `baseurl` in `hugo.toml` as `https://www.gunis.ai/`). DNS must point `www` to GitHub Pages; allow time for the DNS check to turn green.
-- Manual build (optional sanity check before pushing): `./deploy.sh` or `hugo --gc --minify --cleanDestinationDir`; output lands in `public/` but usually you don’t push `public/`—the action generates it for you.
+Use **Node.js 24** (the CI version) and npm. No API keys, database, or environment variables are required.
 
-## Theme toggle
-- Theme cascade is set to `["creative-portfolio", "hugo-narrow"]` in `hugo.toml`. Default is Creative Portfolio; switch order if you want to preview Hugo Narrow.
-- `hugo-narrow` lives at `themes/hugo-narrow` (submodule). It requires Hugo extended ≥0.146.0.
+```sh
+npm ci
+npm run dev
+```
 
-## Hugo versions (side-by-side)
-- Local binaries are vendored in `bin/`:
-  - `./bin/hugo-145` (default; works with Creative Portfolio)
-  - `./bin/hugo-146` (use when testing Hugo Narrow)
-- Pick a version per command by setting `HUGO_BIN`, e.g.:
-  - `HUGO_BIN=./bin/hugo-145 ./view.sh`   # preview with 0.145.0 (default)
-  - `HUGO_BIN=./bin/hugo-146 ./view.sh`   # preview with 0.146.0 (for Hugo Narrow)
-- `./view.sh` defaults to `./bin/hugo-145` and falls back to system `hugo` if the binary is missing.
+Vite prints the local address. Copy and catalog edits regenerate the HTML automatically; CSS and TypeScript update through Vite. To inspect the actual production artifact:
 
-## Notes
-- Keep `baseurl` in `hugo.toml` pointing at `https://www.gunis.ai/` so links and assets resolve correctly.
-- Run all commands from the project root.
+```sh
+npm test
+npm run build
+npm run preview
+```
+
+## How it is built
+
+This is a statically generated, multi-page site. Small Node templates generate complete HTML, then Vite bundles CSS and TypeScript. There is no client-side framework or application server. The landing page, every product, purchase links, and navigation work before JavaScript loads.
+
+| Location                      | Responsibility                                                       |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `src/pages.mjs`               | HTML templates, visible copy, canonical URLs and structured metadata |
+| `src/data/products.json`      | All 11 original products, purchase URLs, descriptions and galleries  |
+| `src/catalog.mjs`             | Catalog validation, URL conventions and escaping                     |
+| `src/styles.css`              | Shared design tokens, typography and responsive layouts              |
+| `src/artwork.ts`              | Optional WebGL refraction, image fallback and motion controls        |
+| `src/main.ts`                 | Catalog filtering/shuffling and product gallery enhancement          |
+| `scripts/generate.mjs`        | HTML generation, legacy redirects, sitemap and robots.txt            |
+| `scripts/verify-build.mjs`    | Deployment-artifact integrity and JavaScript size checks             |
+| `design/`                     | Selected visual reference and original generated brand assets        |
+| `public/`                     | Committed, optimized assets copied into the deployed site            |
+| `.github/workflows/pages.yml` | Verification and GitHub Pages deployment                             |
+
+`dist/` and generated HTML are build outputs, intentionally excluded from Git. Edit their source files instead.
+
+## Publishing
+
+GitHub Actions builds pushes to `main`, checks the catalog and production output, then uploads `dist/` to **GitHub Pages**. Pull requests run the same verification without deploying. The custom domain stays **guni.ai**, recorded in `public/CNAME`. Existing redirects from other domains remain a DNS/domain-provider responsibility.
+
+See [deployment and rollback](docs/deployment.md) for the workflow, write-access setup and recovery steps.
+
+## Maintaining the site
+
+- [Architecture](docs/architecture.md): rendering, routes, graphics, performance and accessibility.
+- [Content and assets](docs/maintenance.md): editing copy/products, asset exports, testing and release checks.
+- [Brand direction](docs/design.md): symbolism, typography, palette and image provenance.
+- [Visual QA](design-qa.md): reference comparison, responsive evidence and verification limits.
+
+Run `npm run format` before committing and `npm run format:check` to check formatting. TypeScript is strict; `npm run check` checks client types. `npm run build` also checks types and verifies the resulting artifact.
+
+## Original website
+
+The previous Hugo storefront remains intact in Git history at [`86633dbb82f43ef509e933a7ebd835a441d0e79c`](https://github.com/sytelus/gunis/tree/86633dbb82f43ef509e933a7ebd835a441d0e79c). It used Hugo layouts/content, theme submodules, committed generated output, and a GitHub Actions Pages workflow. The revamp removes the old implementation and bundled Hugo binaries from the current tree while retaining all 11 products, 23 product images and original vendor purchase URLs.
+
+Font and icon licenses are retained in [docs/licenses](docs/licenses). Brand artwork was generated for this project. Original product imagery is preserved from the repository; no replacement product photography was generated.

@@ -1,0 +1,2 @@
+# Keep text diffs stable across macOS, Windows and Linux; binary assets stay binary.
+* text=auto eol=lf

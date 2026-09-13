@@ -1,0 +1,9 @@
+{
+  "name": "Guni — Learning, in a new light",
+  "short_name": "Guni",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#f7f5f1",
+  "theme_color": "#f7f5f1",
+  "icons": [{ "src": "/assets/brand/guni-mark.png", "sizes": "256x256", "type": "image/png" }]
+}

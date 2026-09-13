@@ -1,12 +1,15 @@
-# IDEs
-.idea/
-.VSCodeCounter/
-.vscode/settings.json
-
-# Hugo
-resources/
-public/
-jsconfig.json
 node_modules/
-go.sum
-.hugo_build.lock
+dist/
+.DS_Store
+.env*
+!.env.example
+# Generated entry pages. Edit src/pages.mjs instead.
+/index.html
+/404.html
+/merch/
+/portfolio/
+/about/
+/contact/
+/public/robots.txt
+/public/sitemap.xml
+/.qa/
