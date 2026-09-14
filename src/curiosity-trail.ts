@@ -1,7 +1,8 @@
 /** Brief refractive fragments, not a drawn guide line. The artwork supplies
  * time and owns all event handlers, visibility and reduced-motion behavior. */
 type Point = { x: number; y: number };
-const CAPACITY = 48;
+const CAPACITY = 36;
+const FRAGMENTS_PER_BURST = 6;
 const EMISSION_INTERVAL = 0.055;
 // Deep chromatic cores hold up on paper; glow alone has too little contrast.
 const COLORS = ['#a84219', '#684588', '#326a7c', '#896013', '#c63d18'];
@@ -44,6 +45,8 @@ export function createCuriosityTrail(host: HTMLElement) {
       spin: 0,
       size: 1,
       phase: 0,
+      sway: 0,
+      bounce: 0,
     };
   });
   host.append(svg);
@@ -64,7 +67,9 @@ export function createCuriosityTrail(host: HTMLElement) {
     point(x: number, y: number, destination: Point, time: number) {
       if (discovered || time - emittedAt < EMISSION_INTERVAL) return;
       emittedAt = time;
-      for (let i = 0; i < 8; i++) {
+      // Six varied pieces leave more air around the pointer than the previous
+      // eight-piece burst while keeping the dark cores easy to see.
+      for (let i = 0; i < FRAGMENTS_PER_BURST; i++) {
         const fragment = fragments[next++ % CAPACITY];
         const scatter = (Math.random() - 0.5) * 42;
         fragment.born = time;
@@ -80,6 +85,8 @@ export function createCuriosityTrail(host: HTMLElement) {
         fragment.spin = (Math.random() - 0.5) * 160;
         fragment.size = 1.6 + Math.random() * 0.9;
         fragment.phase = Math.random() * Math.PI;
+        fragment.sway = (Math.random() - 0.5) * 24;
+        fragment.bounce = 1 + Math.floor(Math.random() * 3);
       }
     },
     hide: clear,
@@ -99,14 +106,24 @@ export function createCuriosityTrail(host: HTMLElement) {
         // Accelerate toward the sculpture; independent curves, tumbling and
         // twinkle create a small refractive wake without showing the paths.
         const t = age * age * (2 - age);
-        const x =
+        const baseX =
           (1 - t) ** 2 * fragment.from.x +
           2 * (1 - t) * t * fragment.control.x +
           t * t * fragment.to.x;
-        const y =
+        const baseY =
           (1 - t) ** 2 * fragment.from.y +
           2 * (1 - t) * t * fragment.control.y +
           t * t * fragment.to.y;
+        // A small, tapering sideways skip gives individual fragments a lively
+        // path without turning the short invitation into a dense particle cloud.
+        const heading = Math.atan2(
+          fragment.to.y - fragment.from.y,
+          fragment.to.x - fragment.from.x,
+        );
+        const skip =
+          Math.sin(age * Math.PI * fragment.bounce + fragment.phase) * fragment.sway * (1 - age);
+        const x = baseX - Math.sin(heading) * skip;
+        const y = baseY + Math.cos(heading) * skip;
         // Keep a readable core for most of the short flight. Only its first
         // 8% and final 20% fade; twinkle must not make the whole wake vanish.
         const light = 0.82 + 0.18 * Math.sin(age * Math.PI * 2 + fragment.phase) ** 2;
@@ -114,7 +131,7 @@ export function createCuriosityTrail(host: HTMLElement) {
         fragment.group.setAttribute('opacity', String(opacity));
         fragment.group.setAttribute(
           'transform',
-          `translate(${x} ${y}) rotate(${fragment.angle + age * fragment.spin}) scale(${fragment.size * (1 - age * 0.3)})`,
+          `translate(${x} ${y}) rotate(${fragment.angle + age * fragment.spin}) scale(${fragment.size * (1 - age * 0.3) * (1 + Math.sin(age * Math.PI) * 0.08)})`,
         );
       }
       svg.style.opacity = active ? '1' : '0';

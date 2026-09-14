@@ -2,7 +2,7 @@
 
 ## Editing copy
 
-The landing page, shared navigation/footer and metadata live in `src/pages.mjs`. Change visible copy and its description/social metadata together. The hero subtitle is “For humans. For AI.”; “A billion small brains > one monster brain” belongs in the shared footer. The hero heading stays real HTML, separate from the artwork. Keep the concise public purpose and coming-soon positioning; avoid inventing product details.
+The landing page, shared navigation/footer and metadata live in `src/pages.mjs`. Change visible copy and its description/social metadata together. The hero subtitle is “For humans. For AI.”; “A billion small brains > one giga brain” belongs in the shared footer. The hero heading stays real HTML, separate from the artwork. Keep the concise public purpose and coming-soon positioning; avoid inventing product details.
 
 The canonical URL is `SITE`; contact is `CONTACT`. A domain migration also requires `public/CNAME`, the manifest, deployment verification, DNS and GitHub Pages settings to be updated together. Changing the CNAME file alone is insufficient.
 
@@ -33,7 +33,7 @@ After copy, typography or mark changes, run `npm run prepare:social`. This rende
 
 ## Artwork interaction
 
-`src/artwork.ts` owns pointer/keyboard input, graphics, motion preferences, visibility and cleanup. `src/curiosity-trail.ts` draws the invitation using the same frame loop. Tune idle duration (4.5 seconds), response duration (3.2 seconds), hover ripple interval (0.45 seconds), ellipse bounds (38% width / 43% height) in the artwork module. The particle module contains the shape/color palettes, fixed capacity (48), emission interval (55ms), and fragment lifetime (380–650ms). Eight particles are emitted per accepted pointer event and pooled nodes are reused. Shape scale is 1.6–2.5; colored cores remain at 82–100% opacity except for brief entry/exit fades. Keep this contrast and size when adjusting the glow. These times are animation time and suspend with hidden/offscreen rendering. Never add a second permanent animation loop or draw continuous guide curves.
+`src/artwork.ts` owns pointer/keyboard input, graphics, motion preferences, visibility and cleanup. `src/curiosity-trail.ts` draws the invitation using the same frame loop. Tune idle duration (4.5 seconds), response duration (3.2 seconds), hover ripple interval (0.45 seconds), ellipse bounds (38% width / 43% height) in the artwork module. The particle module contains the shape/color palettes, fixed capacity (36), emission interval (55ms), and fragment lifetime (380–650ms). Six particles are emitted per accepted pointer event and pooled nodes are reused. Each follows its base curve with a small tapering sideways skip and a slight mid-flight scale lift. Shape scale is 1.6–2.5; colored cores remain at 82–100% opacity except for brief entry/exit fades. Keep this contrast and size when adjusting the glow. These times are animation time and suspend with hidden/offscreen rendering. Never add a second permanent animation loop or draw continuous guide curves.
 
 Pointer Events permit mouse and supported stylus hover without contact. Ordinary touch screens cannot detect a hovering finger; touch-down/movement is their supported interaction. Preserve `touch-action: pan-y`, passive listeners and cancellation handling so scrolling remains natural. No pointer capture is needed. Hints stay hidden until enhancement succeeds and remain hidden for reduced motion. Avoid adding live announcements for every hover event.
 

@@ -2,7 +2,7 @@
 
 The coming-soon website for [guni.ai](https://guni.ai): advancing learning technologies for humans and AI.
 
-**Learning Upgraded.** For humans. For AI. The footer carries “A billion small brains > one monster brain”. An interactive ceramic-and-glass sculpture pairs with an orange two-ring mark, Instrument Sans, and Instrument Serif. Brief glass-like fragments invite exploration and retire once the visitor discovers the figure; hover or touch continues to bend its light. A quiet **Merch** link opens the preserved product collection; **Say hello** opens [shital.com](https://shital.com).
+**Learning Upgraded.** For humans. For AI. The footer carries “A billion small brains > one giga brain”. An interactive ceramic-and-glass sculpture pairs with an orange two-ring mark, Instrument Sans, and Instrument Serif. Brief glass-like fragments invite exploration and retire once the visitor discovers the figure; hover or touch continues to bend its light. A quiet **Merch** link opens the preserved product collection; **Say hello** opens [shital.com](https://shital.com).
 
 ## Run locally
 

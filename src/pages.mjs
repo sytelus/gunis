@@ -14,7 +14,7 @@ export function header() {
 }
 
 function footer(home = false) {
-  return `<footer class="site-footer"><a class="domain" href="/">guni.ai</a><p class="footer-note">A billion small brains <span class="tagline-comparison">&gt;</span> one monster brain</p>${home ? `<a class="text-link side-quest" href="/merch/">Merch ${icon('arrow-up-right')}</a>` : `<a class="text-link" href="/">Back to the beginning ${icon('arrow-up-left')}</a>`}</footer>`;
+  return `<footer class="site-footer"><a class="domain" href="/">guni.ai</a><p class="footer-note">A billion small brains <span class="tagline-comparison">&gt;</span> one giga brain</p>${home ? `<a class="text-link side-quest" href="/merch/">Merch ${icon('arrow-up-right')}</a>` : `<a class="text-link" href="/">Back to the beginning ${icon('arrow-up-left')}</a>`}</footer>`;
 }
 
 /** HTML is rendered at build time so crawlers and JS-disabled browsers receive
@@ -60,7 +60,7 @@ export function homePage() {
   return documentPage({
     title: 'guni.ai — Learning Upgraded',
     description:
-      'A billion small brains > one monster brain. Advancing learning technologies for humans and AI. Coming soon from guni.ai.',
+      'A billion small brains > one giga brain. Advancing learning technologies for humans and AI. Coming soon from guni.ai.',
     path: '/',
     body,
     className: 'page-home',
