@@ -10,11 +10,11 @@ const external = (url, text, css = '') =>
   `<a class="text-link ${css}" href="${e(url)}" target="_blank" rel="noopener noreferrer">${text}${icon('arrow-up-right')}<span class="sr-only"> (opens in a new tab)</span></a>`;
 
 export function header() {
-  return `<header class="site-header"><a class="brand" href="/" aria-label="Guni home"><img class="brand-mark" src="/assets/brand/guni-mark.png" alt="" width="70" height="70"><span>guni</span></a>${external(CONTACT, 'Say hello')}</header>`;
+  return `<header class="site-header"><a class="brand" href="/" aria-label="guni.ai home"><img class="brand-mark" src="/assets/brand/guni-mark.png" alt="" width="70" height="70"><span>guni.ai</span></a>${external(CONTACT, 'Say hello')}</header>`;
 }
 
 function footer(home = false) {
-  return `<footer class="site-footer"><a class="domain" href="/">guni.ai</a><p class="footer-note">A little curiosity goes a long way.</p>${home ? `<a class="text-link side-quest" href="/merch/">Side quests <span class="slash">/</span> Merch ${icon('arrow-up-right')}</a>` : `<a class="text-link" href="/">Back to the beginning ${icon('arrow-up-left')}</a>`}</footer>`;
+  return `<footer class="site-footer"><a class="domain" href="/">guni.ai</a><p class="footer-note">A billion small brains <span class="tagline-comparison">&gt;</span> one monster brain</p>${home ? `<a class="text-link side-quest" href="/merch/">Merch ${icon('arrow-up-right')}</a>` : `<a class="text-link" href="/">Back to the beginning ${icon('arrow-up-left')}</a>`}</footer>`;
 }
 
 /** HTML is rendered at build time so crawlers and JS-disabled browsers receive
@@ -36,7 +36,7 @@ export function documentPage({
 ${noindex ? '<meta name="robots" content="noindex,follow">' : '<meta name="robots" content="index,follow,max-image-preview:large">'}
 <meta property="og:type" content="website"><meta property="og:site_name" content="Guni">
 <meta property="og:title" content="${e(title)}"><meta property="og:description" content="${e(description)}"><meta property="og:url" content="${SITE}${path}">
-<meta property="og:image" content="${SITE}/assets/brand/social-cover.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Guni — learning, in a new light. Interlocking ivory and prismatic glass loops.">
+<meta property="og:image" content="${SITE}/assets/brand/social-cover.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Guni — interlocking ivory and prismatic glass loops, a symbol of shared learning.">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${e(title)}"><meta name="twitter:description" content="${e(description)}"><meta name="twitter:image" content="${SITE}/assets/brand/social-cover.jpg">
 <link rel="icon" href="/favicon.png" type="image/png"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="manifest" href="/site.webmanifest">
 <link rel="preload" href="/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="/fonts/instrument-serif-italic.woff2" as="font" type="font/woff2" crossorigin>
@@ -48,20 +48,19 @@ ${preloadHero ? '<link rel="preload" as="image" href="/assets/brand/learning-loo
 
 export function homePage() {
   const body = `<div class="home-shell">${header()}<main id="main" class="home-hero">
-<div class="hero-copy"><h1><span class="headline-sans">Learning,</span><em>in a new light.</em></h1><p class="hero-subtitle">For humans. For AI.</p><p class="launch-status"><span aria-hidden="true"></span>Coming soon</p></div>
+<div class="hero-copy"><h1><span class="headline-sans">Learning</span><em>Upgraded.</em></h1><p class="hero-subtitle">For humans. For AI.</p><p class="launch-status"><span aria-hidden="true"></span>Coming soon</p></div>
 <div class="artwork" data-artwork>
 <img class="artwork-image" src="/assets/brand/learning-loop.webp" width="1122" height="1402" alt="Two interlocking loops of ivory ceramic and prismatic glass, a symbol of shared learning." fetchpriority="high" decoding="async">
 <canvas class="artwork-canvas" aria-hidden="true"></canvas>
-<button class="artwork-touch" type="button" aria-label="Explore the learning loop. Drag to bend the light, or use arrow keys. Press Enter to send a ripple." aria-describedby="artwork-hint" hidden></button>
+<button class="artwork-touch" type="button" aria-label="Explore the learning loop. Move your pointer or touch to bend the light. Use arrow keys to explore, Enter to send a ripple, or Escape to settle the motion." aria-describedby="artwork-hint" hidden></button>
 </div>
-<div class="artwork-hint" id="artwork-hint" hidden><span class="hint-text">Drag to discover</span>${icon('arrows-horizontal')}</div>
-<div class="motion-controls" hidden><button class="motion-button" type="button" aria-pressed="false"><span class="motion-icon">${icon('pause')}</span><span class="motion-label">Pause motion</span></button></div>
+<div class="artwork-hint" id="artwork-hint" hidden><span class="hint-text">A little curiosity</span>${icon('arrows-horizontal')}</div>
 <span class="sr-only" data-artwork-announcement aria-live="polite"></span>
 </main>${footer(true)}</div>`;
   return documentPage({
-    title: 'Guni — Learning, in a new light',
+    title: 'guni.ai — Learning Upgraded',
     description:
-      'Advancing learning technologies for humans and AI. A new chapter in learning is taking shape. Coming soon from Guni.',
+      'A billion small brains > one monster brain. Advancing learning technologies for humans and AI. Coming soon from guni.ai.',
     path: '/',
     body,
     className: 'page-home',
@@ -87,7 +86,7 @@ export function homePage() {
         },
         {
           '@type': 'WebPage',
-          name: 'Learning, in a new light',
+          name: 'Learning Upgraded',
           url: `${SITE}/`,
           isPartOf: { '@id': `${SITE}/#website` },
           about: { '@id': `${SITE}/#organization` },

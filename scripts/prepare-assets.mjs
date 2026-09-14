@@ -11,20 +11,24 @@ await Promise.all(
 await sharp('design/assets/learning-loop.png')
   .webp({ quality: 89, effort: 6 })
   .toFile('public/assets/brand/learning-loop.webp');
-await sharp('design/assets/guni-mark.png')
-  .resize(256, 256)
-  .png()
-  .toFile('public/assets/brand/guni-mark.png');
-await sharp('design/assets/guni-mark.png').resize(64, 64).png().toFile('public/favicon.png');
-await sharp('design/assets/guni-mark.png')
+// Owner-selected Linked G concept. Crop presentation whitespace, not the mark;
+// reuse this framing for every size. Keep the original logo source for rollback.
+const mark = sharp('design/concepts/guni-linked-g-v4.png').extract({
+  left: 145,
+  top: 149,
+  width: 960,
+  height: 960,
+});
+await mark.clone().resize(256, 256).png().toFile('public/assets/brand/guni-mark.png');
+await mark.clone().resize(64, 64).png().toFile('public/favicon.png');
+await mark
+  .clone()
   .resize(180, 180)
   .flatten({ background: '#f7f5f1' })
   .png()
   .toFile('public/apple-touch-icon.png');
-await sharp('design/assets/social-cover.png')
-  .resize(1200, 630, { fit: 'cover' })
-  .jpeg({ quality: 89, mozjpeg: true })
-  .toFile('public/assets/brand/social-cover.jpg');
+// The social card contains live copy. Export it separately with prepare:social
+// instead of accidentally restoring the historical generated heading.
 await copyFile(
   'node_modules/@fontsource-variable/instrument-sans/files/instrument-sans-latin-wght-normal.woff2',
   'public/fonts/instrument-sans.woff2',
@@ -39,8 +43,6 @@ for (const name of [
   'arrow-left',
   'arrow-right',
   'arrows-horizontal',
-  'pause',
-  'play',
   'shuffle',
   'plus',
 ]) {

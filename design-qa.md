@@ -1,5 +1,24 @@
 # Design QA
 
+## Learning Upgraded revision — September 13, 2026
+
+Latest logo color revision: the middle arc is removed, the dot retains its pale peach-orange tint, and both rings retain the deeper vermilion. Runtime header, icons and social card are exported from `design/concepts/guni-linked-g-v4.png`; the earlier single-color version remains for rollback.
+
+Result: passed the browser and responsive checks below. This owner-requested revision supersedes the original copy, raster header mark, drag hint and pause-control requirements recorded in the historical review below.
+
+- Heading: “Learning / Upgraded.” Hero subtitle: “For humans. For AI.” Footer: “A billion small brains > one monster brain” and a simple “Merch” link. Shared header: `guni.ai` with the owner-selected Linked G proposal, featuring two orange rings and a pale peach-orange detached dot, without a middle arc. Header, icons and social card use the same cropped raster concept for testing; the original source is retained for rollback. The original paper, glass/ceramic sculpture, font pairing and two-column composition remain.
+- Mouse movement changes WebGL output without a click. A pooled wake of mixed shards, slivers, filaments, dust and glints tumbles toward the sculpture, briefly catching colored light. No persistent guide curves are drawn. Each fragment lasts 380–650ms of animation time. Sustained exploration or intentional click/touch/keyboard interaction retires the effect for the page visit. The hint is a fixed “A little curiosity” and the original horizontal arrow, below the sculpture on phones.
+- Intermittent-stop regression: a brief brush across the broad invisible ellipse permanently dismissed particles. A browser test reproduced this failure before the fix. It now verifies resumption after boundary crossings and short passes, slow one-pixel reversals on startup and after settling, plus retirement after deliberate exploration. Discovery now requires 1.2 seconds and 24px of movement in the inner 82% of the ellipse, with no input gap over 300ms; the broad boundary only hides particles temporarily.
+- Visibility correction: fragments now use 1.6–2.5× scale, dark orange/violet/teal cores and 82–100% opacity during the main flight. The 48-slot pool emits eight fragments at a time. This increases visibility without lengthening the effect; entry and exit fades occupy only 8% and 20% of its lifetime.
+- The pause button is removed. Intro motion settles after 4.5 animation seconds; responses settle 3.2 seconds after input. Escape stops immediately. Live reduced-motion changes disable interaction and invitations, reset active effects, and work in both directions. The old stored pause setting is ignored.
+- Chromium checks passed for WebGL hover, invitation appearance/disappearance, Enter/arrow/Escape controls, automatic settling, live reduced motion, no-WebGL image response, hovering pen PointerEvents, graphics context loss/restoration, touch input and actual vertical touch scrolling, JavaScript-disabled content, merch filters and product gallery navigation. No application exceptions or failed HTTP requests were observed.
+- Phone widths 320 and 390, tablet width 820, and desktop 1487 were checked at device scale 1. No horizontal overflow. Full-page phone screenshots include the naturally scrolling footer. The new 1200 × 630 social card was rendered from the real HTML and inspected.
+- Reproduce with `npm run test:browser`; screenshots go to `.qa/`. Current selected evidence: `docs/qa/learning-upgraded-desktop.jpg`, `docs/qa/learning-upgraded-mobile.jpg`, and `docs/qa/learning-upgraded-tablet.jpg`.
+- `npm test`, strict TypeScript, production build, asset/link/metadata verification, formatting and dependency audit pass. Production JavaScript remains about 14.1 KB before compression against the 60 KB gate. Updated Markdown-it and Sharp remove the two dependency advisories found during installation.
+- Device limits: WebGL was exercised using Chromium's software SwiftShader renderer. Touch scrolling used Chromium touch emulation; pen hover used a primary zero-button PointerEvent. Physical Safari/iOS, VoiceOver, hardware GPUs and hovering-finger hardware were not available. Ordinary phones cannot detect a finger hovering above the display; contact is the supported fallback.
+
+## Original launch review (historical)
+
 final result: passed
 
 Reviewed 2026-09-13. No open P0/P1/P2 findings remain in the reviewed visual and interaction scope.

@@ -49,7 +49,11 @@ test('HTML and metadata escape future product input and script-closing payloads'
 test('the landing and catalog have complete content without JavaScript', () => {
   const home = homePage();
   assert.ok(home.includes('<h1>'));
-  assert.ok(home.includes('For humans. For AI.'));
+  assert.match(home, /class="hero-subtitle">For humans\. For AI\.<\/p>/);
+  assert.match(home, /class="footer-note">A billion small brains .*one monster brain<\/p>/);
+  assert.ok(home.includes('<em>Upgraded.</em>'));
+  assert.ok(home.includes('<span>guni.ai</span>'));
+  assert.ok(!home.includes('motion-controls'));
   assert.ok(home.includes('href="https://shital.com"'));
   assert.ok(home.includes('href="/merch/"'));
   assert.ok(home.includes('rel="canonical" href="https://guni.ai/"'));

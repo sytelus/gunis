@@ -7,6 +7,8 @@
  * GPU capability is detected directly; no vendor fingerprinting is needed for
  * Apple/Metal-backed WebGL. A normal <img> remains the fallback at every stage.
  */
+import { createCuriosityTrail } from './curiosity-trail';
+
 const VERTEX = `attribute vec2 a_position;
 varying vec2 v_uv;
 void main(){v_uv=a_position*.5+.5;gl_Position=vec4(a_position,0.,1.);}`;
@@ -116,24 +118,12 @@ function createGraphics(canvas: HTMLCanvasElement, image: HTMLImageElement): Gra
   }
 }
 
-function savedPause(): boolean {
-  try {
-    return sessionStorage.getItem('guni.motionPaused') === 'true';
-  } catch {
-    return false;
-  }
-}
-
 export async function mountArtwork(root: HTMLElement): Promise<() => void> {
   const image = root.querySelector<HTMLImageElement>('.artwork-image')!;
   const canvas = root.querySelector<HTMLCanvasElement>('canvas')!;
   const surface = root.querySelector<HTMLButtonElement>('.artwork-touch')!;
-  const controls = document.querySelector<HTMLElement>('.motion-controls')!;
-  const toggle = controls.querySelector<HTMLButtonElement>('button')!;
-  const label = toggle.querySelector<HTMLElement>('.motion-label')!;
-  const icon = toggle.querySelector<HTMLImageElement>('img')!;
+  const host = root.closest<HTMLElement>('.home-shell')!;
   const hint = document.querySelector<HTMLElement>('.artwork-hint')!;
-  const hintText = hint.querySelector<HTMLElement>('.hint-text')!;
   const announcement = document.querySelector<HTMLElement>('[data-artwork-announcement]')!;
   const media = matchMedia('(prefers-reduced-motion: reduce)');
   const events = new AbortController();
@@ -145,7 +135,7 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
   }
   let graphics = createGraphics(canvas, image);
   let frame = 0;
-  let paused = media.matches || savedPause();
+  let paused = media.matches;
   let visible = !document.hidden;
   let onScreen = true;
   let elapsed = 0;
@@ -154,7 +144,18 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
   let ripple = { x: 0.5, y: 0.5 };
   let target = { x: 0, y: 0 };
   let pointer = { x: 0, y: 0 };
-  let pressed = false;
+  // With no pause UI, ambient motion runs for at most 4.5 seconds. Every
+  // deliberate interaction starts a fresh 3.2-second response, then settles.
+  let activeUntil = 4.5;
+  let lastHoverRipple = -10;
+  let exploration: {
+    x: number;
+    y: number;
+    time: number;
+    started: number;
+    distance: number;
+  } | null = null;
+  const trail = createCuriosityTrail(host);
   let pixelRatio = Math.min(
     devicePixelRatio || 1,
     matchMedia('(pointer: coarse)').matches ? 1.3 : 1.75,
@@ -180,6 +181,7 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
     draw();
   }
   function draw() {
+    trail.draw(elapsed);
     if (!graphics) {
       // Keep exploration available on devices without WebGL. Transform the
       // original asset subtly; no replacement illustration is synthesized.
@@ -220,39 +222,53 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
     pointer.x += (target.x - pointer.x) * easing;
     pointer.y += (target.y - pointer.y) * easing;
     draw();
-    frame = requestAnimationFrame(animate);
+    if (elapsed < activeUntil) frame = requestAnimationFrame(animate);
+    else {
+      previous = 0;
+      root.dataset.motion = 'settled';
+    }
   }
   function schedule() {
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
     previous = 0;
-    if (!paused && visible && onScreen) frame = requestAnimationFrame(animate);
+    if (!paused && visible && onScreen && elapsed < activeUntil) {
+      root.dataset.motion = 'active';
+      frame = requestAnimationFrame(animate);
+    }
+  }
+  function wake() {
+    if (paused) return;
+    activeUntil = elapsed + 3.2;
+    if (!frame) schedule();
   }
   function setPaused(value: boolean) {
     paused = value;
-    toggle.setAttribute('aria-pressed', String(paused));
-    label.textContent = paused ? 'Enable motion' : 'Pause motion';
-    icon.src = `/icons/${paused ? 'play' : 'pause'}.svg`;
     surface.disabled = paused;
     hint.hidden = paused;
-    try {
-      sessionStorage.setItem('guni.motionPaused', String(paused));
-    } catch {
-      /* Storage can be unavailable in private contexts. */
-    }
+    trail.hide();
+    exploration = null;
+    target = pointer = { x: 0, y: 0 };
+    rippleAt = -10;
+    lastHoverRipple = -10;
+    elapsed = 0;
+    activeUntil = paused ? 0 : 4.5;
+    root.dataset.motion = paused ? 'reduced' : 'active';
+    draw();
     schedule();
   }
   function point(event: PointerEvent) {
     // Refresh client coordinates on interaction, since the user may have scrolled.
     box = root.getBoundingClientRect();
     lastPointer = {
-      x: (event.clientX - box.left) / box.width,
-      y: 1 - (event.clientY - box.top) / box.height,
+      x: Math.max(0, Math.min(1, (event.clientX - box.left) / box.width)),
+      y: Math.max(0, Math.min(1, 1 - (event.clientY - box.top) / box.height)),
     };
     target = { x: (lastPointer.x - 0.5) * 2, y: (lastPointer.y - 0.5) * 2 };
   }
-  function sendRipple() {
+  function sendRipple(announce = false) {
     if (paused) return;
+    wake();
     const aspect = canvas.width / canvas.height;
     const imageAspect = image.naturalWidth / image.naturalHeight;
     ripple = {
@@ -260,46 +276,93 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
       y: (lastPointer.y - 0.5) * Math.max(1, imageAspect / aspect) + 0.5,
     };
     rippleAt = elapsed;
-    announcement.textContent = 'A new perspective. The light responds to your curiosity.';
+    if (announce)
+      announcement.textContent = 'A new perspective. The light responds to your curiosity.';
   }
-  surface.addEventListener(
-    'pointerdown',
-    (event) => {
-      if (paused) return;
-      pressed = true;
-      point(event);
-      surface.setPointerCapture(event.pointerId);
-      sendRipple();
-      hintText.textContent = 'A new perspective';
-    },
-    options,
-  );
-  surface.addEventListener(
-    'pointermove',
-    (event) => {
-      if (!paused && (event.pointerType === 'mouse' || pressed)) point(event);
-    },
-    options,
-  );
-  for (const eventName of ['pointerup', 'pointercancel', 'lostpointercapture'])
-    surface.addEventListener(
-      eventName,
-      () => {
-        pressed = false;
-      },
-      options,
-    );
-  surface.addEventListener(
-    'pointerleave',
-    () => {
-      if (!pressed) target = { x: 0, y: 0 };
-    },
-    options,
-  );
+  function hasExplored(event: PointerEvent, distance: number): boolean {
+    if (event.type === 'pointerdown') return true;
+    // A broad ellipse is useful for responsive light, but includes whitespace.
+    // Do not permanently dismiss the invitation on a casual crossing. Require
+    // 1.2s of continuous movement, covering 24px, in the inner 82% of that area.
+    if (distance > 0.82) {
+      exploration = null;
+      return false;
+    }
+    const now = event.timeStamp;
+    const previous = exploration;
+    const continuous = previous !== null && now - previous.time <= 300;
+    exploration = {
+      x: event.clientX,
+      y: event.clientY,
+      time: now,
+      started: continuous ? previous.started : now,
+      distance: continuous
+        ? previous.distance + Math.hypot(event.clientX - previous.x, event.clientY - previous.y)
+        : 0,
+    };
+    return now - exploration.started >= 1200 && exploration.distance >= 24;
+  }
+  function explore(event: PointerEvent) {
+    if (paused || !visible || !onScreen || !event.isPrimary) return;
+    // Do not paint invitations over navigation. Pointer Events also support
+    // hovering pens; ordinary touch screens can only report actual contact.
+    if ((event.target as Element).closest('a, button:not(.artwork-touch)')) {
+      trail.hide();
+      exploration = null;
+      return;
+    }
+    point(event);
+    wake();
+    const cx = box.left + box.width * 0.5;
+    const cy = box.top + box.height * 0.5;
+    const dx = (event.clientX - cx) / (box.width * 0.38);
+    const dy = (event.clientY - cy) / (box.height * 0.43);
+    const distance = Math.hypot(dx, dy);
+    if (distance <= 1) {
+      trail.hide();
+      if (hasExplored(event, distance)) trail.dismiss();
+      if (elapsed - lastHoverRipple > 0.45) {
+        sendRipple();
+        lastHoverRipple = elapsed;
+      }
+    } else {
+      exploration = null;
+      // End at the silhouette's approximate elliptical edge, not its center.
+      trail.point(
+        event.clientX,
+        event.clientY,
+        {
+          x: cx + (event.clientX - cx) / distance,
+          y: cy + (event.clientY - cy) / distance,
+        },
+        elapsed,
+      );
+      target.x *= 0.25;
+      target.y *= 0.25;
+    }
+  }
+  host.addEventListener('pointermove', explore, { ...options, passive: true });
+  host.addEventListener('pointerdown', explore, { ...options, passive: true });
+  function release() {
+    target = { x: 0, y: 0 };
+    exploration = null;
+    trail.hide();
+  }
+  for (const name of ['pointerleave', 'pointercancel', 'pointerup'])
+    host.addEventListener(name, release, options);
+  window.addEventListener('scroll', release, { ...options, passive: true });
+  surface.addEventListener('blur', release, options);
   surface.addEventListener(
     'keydown',
     (event) => {
       if (paused) return;
+      if (event.key === 'Escape') {
+        activeUntil = elapsed;
+        trail.hide();
+        root.dataset.motion = 'settled';
+        schedule();
+        return;
+      }
       const directions: Record<string, [number, number]> = {
         ArrowLeft: [-0.3, 0],
         ArrowRight: [0.3, 0],
@@ -308,11 +371,13 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
       };
       if (directions[event.key]) {
         event.preventDefault();
+        trail.dismiss();
         const [x, y] = directions[event.key];
         target = {
           x: Math.max(-1, Math.min(1, target.x + x)),
           y: Math.max(-1, Math.min(1, target.y + y)),
         };
+        wake();
       }
     },
     options,
@@ -322,17 +387,17 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
     'click',
     (event) => {
       if (event.detail === 0) {
+        trail.dismiss();
         lastPointer = { x: 0.5, y: 0.5 };
-        sendRipple();
+        sendRipple(true);
       }
     },
     options,
   );
-  toggle.addEventListener('click', () => setPaused(!paused), options);
   media.addEventListener(
     'change',
     () => {
-      if (media.matches) setPaused(true);
+      setPaused(media.matches);
     },
     options,
   );
@@ -340,12 +405,14 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
     'visibilitychange',
     () => {
       visible = !document.hidden;
+      release();
       schedule();
     },
     options,
   );
   const observer = new IntersectionObserver(([entry]) => {
     onScreen = entry.isIntersecting;
+    if (!onScreen) release();
     schedule();
   });
   const sizeObserver = new ResizeObserver(resize);
@@ -369,7 +436,6 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
         uniforms();
         resize();
         root.dataset.renderer = 'webgl';
-        controls.hidden = false;
         surface.hidden = false;
         setPaused(paused);
       }
@@ -379,17 +445,15 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
   uniforms();
   resize();
   root.dataset.renderer = graphics ? 'webgl' : 'image';
-  controls.hidden = false;
   surface.hidden = false;
-  hintText.textContent = matchMedia('(pointer: coarse)').matches
-    ? 'Touch to discover'
-    : 'Drag to discover';
+  release();
   setPaused(paused);
   return () => {
     events.abort();
     observer.disconnect();
     sizeObserver.disconnect();
     cancelAnimationFrame(frame);
+    trail.destroy();
     if (graphics) {
       graphics.gl.deleteTexture(graphics.texture);
       graphics.gl.deleteBuffer(graphics.buffer);

@@ -149,6 +149,8 @@ em {
   width: 66px;
   height: 66px;
   object-fit: contain;
+  /* Blend the selected raster concept's paper into the site's paper surface. */
+  mix-blend-mode: darken;
 }
 .brand span {
   font-size: 46px;
@@ -186,6 +188,8 @@ em {
   font-style: italic;
   font-size: 19px;
   color: #42413e;
+  line-height: 1.4;
+  text-wrap: balance;
 }
 .slash {
   color: #77716b;
@@ -238,10 +242,14 @@ em {
   margin-top: 1px;
 }
 .hero-subtitle {
-  font-size: clamp(22px, 2.5vw, 38px);
+  font-size: clamp(22px, 2.3vw, 34px);
   font-weight: 400;
   letter-spacing: -0.035em;
   margin-top: 27px;
+  line-height: 1.35;
+}
+.tagline-comparison {
+  color: var(--accent);
 }
 .launch-status {
   display: flex;
@@ -300,15 +308,12 @@ em {
   inset: 4% 9% 7%;
   width: 82%;
   height: 89%;
-  cursor: grab;
+  cursor: crosshair;
   touch-action: pan-y;
   padding: 0;
   z-index: 3;
   border-radius: 42%;
   user-select: none;
-}
-.artwork-touch:active {
-  cursor: grabbing;
 }
 .artwork-touch:focus-visible {
   outline: 1px solid var(--accent);
@@ -318,9 +323,9 @@ em {
   position: absolute;
   z-index: 3;
   right: 0;
-  top: 44%;
+  bottom: 32px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   gap: 10px;
   color: var(--muted);
@@ -328,38 +333,19 @@ em {
   pointer-events: none;
 }
 .artwork-hint .icon {
-  width: 62px;
+  width: 24px;
   opacity: 0.65;
 }
-.motion-controls {
-  position: absolute;
-  right: 0;
-  bottom: 28px;
-  z-index: 5;
-}
-.motion-button {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 48px;
-  padding: 2px;
-  font-size: 14px;
-}
-.motion-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  border: 1px solid #5b5955;
-  display: grid;
-  place-items: center;
-  transition: background 0.2s;
-}
-.motion-button:hover .motion-icon {
-  background: #ebe6dc;
-}
-.motion-icon .icon {
-  width: 19px;
-  height: 19px;
+/* An inert SVG follows the pointer through the whitespace. Text and links
+ * remain above it; its animation shares the artwork's bounded frame loop. */
+.curiosity-trail {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
 }
 
 /* The shop is a quiet editorial collection; imagery is inherited, not remade. */
@@ -791,10 +777,10 @@ em {
     max-height: 560px;
   }
   .artwork-hint {
-    top: auto;
-    bottom: 32px;
-    right: auto;
-    left: 0;
+    position: relative;
+    inset: auto;
+    align-self: center;
+    margin: 0 0 25px;
     font-size: 12px;
     flex-direction: row;
     gap: 6px;
@@ -803,26 +789,6 @@ em {
   }
   .artwork-hint .icon {
     width: 24px;
-  }
-  .motion-controls {
-    position: relative;
-    align-self: flex-end;
-    right: auto;
-    bottom: auto;
-    margin: -8px 0 22px;
-  }
-  .motion-button {
-    font-size: 12px;
-    gap: 9px;
-    min-height: 44px;
-  }
-  .motion-icon {
-    width: 34px;
-    height: 34px;
-  }
-  .motion-icon .icon {
-    width: 16px;
-    height: 16px;
   }
   .site-footer {
     display: grid;

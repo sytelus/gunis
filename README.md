@@ -2,7 +2,7 @@
 
 The coming-soon website for [guni.ai](https://guni.ai): advancing learning technologies for humans and AI.
 
-**Learning, in a new light.** An interactive ceramic-and-glass sculpture pairs with an orange reciprocal-loop mark, Instrument Sans, and Instrument Serif. A quiet **Side quests / Merch** link opens the preserved product collection; **Say hello** opens [shital.com](https://shital.com).
+**Learning Upgraded.** For humans. For AI. The footer carries “A billion small brains > one monster brain”. An interactive ceramic-and-glass sculpture pairs with an orange two-ring mark, Instrument Sans, and Instrument Serif. Brief glass-like fragments invite exploration and retire once the visitor discovers the figure; hover or touch continues to bend its light. A quiet **Merch** link opens the preserved product collection; **Say hello** opens [shital.com](https://shital.com).
 
 ## Run locally
 
@@ -25,19 +25,21 @@ npm run preview
 
 This is a statically generated, multi-page site. Small Node templates generate complete HTML, then Vite bundles CSS and TypeScript. There is no client-side framework or application server. The landing page, every product, purchase links, and navigation work before JavaScript loads.
 
-| Location                      | Responsibility                                                       |
-| ----------------------------- | -------------------------------------------------------------------- |
-| `src/pages.mjs`               | HTML templates, visible copy, canonical URLs and structured metadata |
-| `src/data/products.json`      | All 11 original products, purchase URLs, descriptions and galleries  |
-| `src/catalog.mjs`             | Catalog validation, URL conventions and escaping                     |
-| `src/styles.css`              | Shared design tokens, typography and responsive layouts              |
-| `src/artwork.ts`              | Optional WebGL refraction, image fallback and motion controls        |
-| `src/main.ts`                 | Catalog filtering/shuffling and product gallery enhancement          |
-| `scripts/generate.mjs`        | HTML generation, legacy redirects, sitemap and robots.txt            |
-| `scripts/verify-build.mjs`    | Deployment-artifact integrity and JavaScript size checks             |
-| `design/`                     | Selected visual reference and original generated brand assets        |
-| `public/`                     | Committed, optimized assets copied into the deployed site            |
-| `.github/workflows/pages.yml` | Verification and GitHub Pages deployment                             |
+| Location                               | Responsibility                                                       |
+| -------------------------------------- | -------------------------------------------------------------------- |
+| `src/pages.mjs`                        | HTML templates, visible copy, canonical URLs and structured metadata |
+| `src/data/products.json`               | All 11 original products, purchase URLs, descriptions and galleries  |
+| `src/catalog.mjs`                      | Catalog validation, URL conventions and escaping                     |
+| `src/styles.css`                       | Shared design tokens, typography and responsive layouts              |
+| `src/artwork.ts`                       | Optional WebGL refraction, image fallback and bounded interaction    |
+| `src/curiosity-trail.ts`               | Lightweight SVG pointer invitation, driven by the artwork frame loop |
+| `design/concepts/guni-linked-g-v4.png` | Selected Linked G concept, exported for headers and site icons       |
+| `src/main.ts`                          | Catalog filtering/shuffling and product gallery enhancement          |
+| `scripts/generate.mjs`                 | HTML generation, legacy redirects, sitemap and robots.txt            |
+| `scripts/verify-build.mjs`             | Deployment-artifact integrity and JavaScript size checks             |
+| `design/`                              | Selected visual reference and original generated brand assets        |
+| `public/`                              | Committed, optimized assets copied into the deployed site            |
+| `.github/workflows/pages.yml`          | Verification and GitHub Pages deployment                             |
 
 `dist/` and generated HTML are build outputs, intentionally excluded from Git. Edit their source files instead.
 
@@ -55,6 +57,8 @@ See [deployment and rollback](docs/deployment.md) for the workflow, write-access
 - [Visual QA](design-qa.md): reference comparison, responsive evidence and verification limits.
 
 Run `npm run format` before committing and `npm run format:check` to check formatting. TypeScript is strict; `npm run check` checks client types. `npm run build` also checks types and verifies the resulting artifact.
+
+Run `npm run test:browser` for repeatable Chromium interaction and responsive checks against a temporary production preview. Puppeteer downloads its test browser during `npm ci`; it is a development dependency and is never shipped to visitors. Screenshots are saved under ignored `.qa/`. The artwork settles on its own after brief motion; system reduced motion keeps it still. No pause button or stored motion preference is used.
 
 ## Original website
 
