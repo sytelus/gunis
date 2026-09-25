@@ -28,6 +28,8 @@
   --display: 'Instrument Serif', Georgia, serif;
   --gutter: clamp(24px, 4.45vw, 80px);
   --ease: cubic-bezier(0.2, 0.65, 0.3, 1);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --shell: 1920px;
 }
 *,
 *::before,
@@ -149,8 +151,8 @@ em {
   width: 66px;
   height: 66px;
   object-fit: contain;
-  /* Blend the selected raster concept's paper into the site's paper surface. */
-  mix-blend-mode: darken;
+  /* The exported raster has a real alpha channel: mix-blend-mode cannot reach
+   * the page paper through the header's z-index stacking context. */
 }
 .brand span {
   font-size: 46px;
@@ -167,6 +169,7 @@ em {
 .site-footer {
   border-top: 1px solid var(--line);
   min-height: 84px;
+  padding-bottom: env(safe-area-inset-bottom);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -198,28 +201,69 @@ em {
 .home-shell,
 .content-shell {
   width: 100%;
-  padding: 0 var(--gutter);
-  max-width: 1920px;
+  /* Keep content clear of the notch and rounded corners in landscape. */
+  padding: 0 max(var(--gutter), env(safe-area-inset-right)) 0
+    max(var(--gutter), env(safe-area-inset-left));
+  max-width: var(--shell);
   margin: 0 auto;
 }
 
-/* The canvas is an optional layer over a real, descriptive hero image. */
+/* The WebGL light field (light-field.ts) is an optional layer spanning the
+ * whole page behind all content, so motes can drift behind the headline and
+ * across wide screens. It scrolls with the document instead of being fixed,
+ * which keeps the redrawn sculpture locked to the layout during iOS momentum
+ * scrolling. The real, descriptive hero image remains underneath it. */
+.page-home {
+  position: relative;
+  /* Sideways finger drags stir the swarm instead of starting a browser pan,
+   * so they are neither cancelled nor mistaken for swipe-to-go-back. Vertical
+   * scrolling and pinch zoom stay native, and a pinch-zoomed page (is-zoomed,
+   * set from visualViewport) gets ordinary one-finger panning back. */
+  touch-action: pan-y pinch-zoom;
+}
+.is-zoomed .page-home,
+.is-zoomed .artwork-touch {
+  touch-action: auto;
+}
+/* Dragging during a press-and-hold should not select text; otherwise the
+ * page text stays selectable. */
+.is-holding .page-home {
+  -webkit-user-select: none;
+  user-select: none;
+}
+.light-field {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.light-field.is-live {
+  opacity: 1;
+}
 .home-shell {
   min-height: 100svh;
   display: flex;
   flex-direction: column;
 }
+.page-home .home-shell {
+  position: relative;
+  z-index: 1;
+}
 .home-hero {
   position: relative;
   flex: 1;
-  min-height: 650px;
+  /* Short laptop screens keep the sculpture and footer inside the viewport. */
+  min-height: min(650px, calc(100svh - 220px));
   isolation: isolate;
 }
 .hero-copy {
   position: relative;
   z-index: 2;
-  padding-top: clamp(120px, 15vh, 190px);
-  padding-bottom: 170px;
+  padding-top: clamp(64px, 15vh, 190px);
+  padding-bottom: clamp(56px, 16vh, 170px);
   pointer-events: none;
   width: max-content;
   max-width: 100%;
@@ -231,25 +275,64 @@ em {
 .headline-sans {
   display: block;
   font-weight: 500;
-  font-size: clamp(78px, 9vw, 150px);
+  font-size: clamp(64px, min(9vw, 15.5vh), 150px);
 }
 .hero-copy h1 em {
+  position: relative;
   display: block;
-  font-size: clamp(77px, 9.5vw, 152px);
+  font-size: clamp(63px, min(9.5vw, 16.3vh), 152px);
   letter-spacing: -0.035em;
   line-height: 1.05;
   white-space: nowrap;
   margin-top: 1px;
 }
+/* Headline play (headline.ts). Letter widths are locked to the measured glyph
+ * advances, so a swelling weight never shifts layout. */
+.headline-letters {
+  display: block;
+  white-space: nowrap;
+}
+.headline-letters > span {
+  display: inline-block;
+  text-align: center;
+}
+/* An aria-hidden copy of the italic word paints only a moving prismatic band.
+ * Padding gives italic overhangs and descenders room inside the clipped
+ * background; negative margins keep the glyphs exactly over the original. */
+.headline-sheen {
+  --sheen-x: 50%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 0.12em 0.16em 0.3em;
+  margin: -0.12em 0 0 -0.16em;
+  background-image: linear-gradient(
+    104deg,
+    transparent calc(var(--sheen-x) - 17%),
+    #e2581f calc(var(--sheen-x) - 9%),
+    #c43d86 calc(var(--sheen-x) - 3%),
+    #6a4fd6 calc(var(--sheen-x) + 3%),
+    #2489b5 calc(var(--sheen-x) + 9%),
+    transparent calc(var(--sheen-x) + 17%)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  opacity: 0;
+  pointer-events: none;
+}
 .hero-subtitle {
-  font-size: clamp(22px, 2.3vw, 34px);
+  font-size: clamp(20px, min(2.3vw, 3.9vh), 34px);
   font-weight: 400;
   letter-spacing: -0.035em;
   margin-top: 27px;
   line-height: 1.35;
 }
 .tagline-comparison {
+  display: inline-block;
   color: var(--accent);
+  transition: transform 0.6s var(--spring);
 }
 .launch-status {
   display: flex;
@@ -261,11 +344,21 @@ em {
   letter-spacing: -0.01em;
 }
 .launch-status > span {
+  position: relative;
   display: block;
   width: 10px;
   height: 10px;
   border-radius: 50%;
   background: #ef5833;
+}
+/* The status dot pings on arrival and whenever the swarm learns something. */
+.launch-status > span::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1.5px solid #ef5833;
+  border-radius: 50%;
+  opacity: 0;
 }
 .artwork {
   position: absolute;
@@ -276,13 +369,13 @@ em {
   z-index: 1;
   overflow: visible;
 }
-.artwork-image,
-.artwork-canvas {
+.artwork-image {
   position: absolute;
   width: 100%;
   height: 100%;
   object-fit: contain;
   inset: 0;
+  transition: opacity 0.8s;
 }
 /* Feathering blends the generated studio background into the page, not an
  * illustration replacement. The entire sculpture stays inside the safe area. */
@@ -291,14 +384,6 @@ em {
     linear-gradient(to right, transparent, #000 7%, #000 93%, transparent),
     linear-gradient(to bottom, transparent, #000 5%, #000 94%, transparent);
   mask-composite: intersect;
-}
-.artwork-canvas {
-  opacity: 0;
-  transition: opacity 0.8s;
-  pointer-events: none;
-}
-.artwork[data-renderer='webgl'] .artwork-canvas {
-  opacity: 1;
 }
 .artwork[data-renderer='webgl'] .artwork-image {
   opacity: 0;
@@ -309,15 +394,18 @@ em {
   width: 82%;
   height: 89%;
   cursor: crosshair;
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
   padding: 0;
   z-index: 3;
   border-radius: 42%;
   user-select: none;
+  -webkit-touch-callout: none;
 }
 .artwork-touch:focus-visible {
-  outline: 1px solid var(--accent);
+  outline: 1.5px solid var(--accent);
   outline-offset: -10px;
+  /* Follow the sculpture's rounded hit area, not the global 2px focus corner. */
+  border-radius: 42%;
 }
 .artwork-hint {
   position: absolute;
@@ -336,8 +424,8 @@ em {
   width: 24px;
   opacity: 0.65;
 }
-/* An inert SVG follows the pointer through the whitespace. Text and links
- * remain above it; its animation shares the artwork's bounded frame loop. */
+/* Without WebGL2, an inert SVG follows the pointer through the whitespace.
+ * Text and links remain above it; it shares the artwork's bounded frame loop. */
 .curiosity-trail {
   position: fixed;
   inset: 0;
@@ -651,7 +739,7 @@ em {
 
 @media (min-width: 1600px) {
   .home-hero {
-    min-height: 740px;
+    min-height: min(740px, calc(100svh - 220px));
   }
   .artwork {
     right: 4%;
@@ -661,7 +749,51 @@ em {
     right: 1%;
   }
   .hero-copy {
-    padding-top: 200px;
+    padding-top: clamp(64px, 17vh, 200px);
+  }
+}
+/* Wide and ultrawide screens: the landing composition grows with the display
+ * instead of floating as a small island; the light field fills the margins. */
+@media (min-width: 2200px) {
+  .page-home {
+    --shell: 2400px;
+    --gutter: 96px;
+  }
+  .page-home .site-header {
+    height: 164px;
+  }
+  .page-home .brand-mark {
+    width: 80px;
+    height: 80px;
+  }
+  .page-home .brand span {
+    font-size: 56px;
+    letter-spacing: -3px;
+  }
+  .page-home .text-link,
+  .page-home .domain {
+    font-size: 18px;
+  }
+  .page-home .footer-note {
+    font-size: 22px;
+  }
+  .page-home .site-footer {
+    min-height: 100px;
+  }
+  .page-home .headline-sans {
+    font-size: clamp(150px, min(8.4vw, 15.5vh), 214px);
+  }
+  .page-home .hero-copy h1 em {
+    font-size: clamp(152px, min(8.9vw, 16.3vh), 220px);
+  }
+  .page-home .hero-subtitle {
+    font-size: clamp(34px, 3.4vh, 48px);
+  }
+  .page-home .launch-status {
+    font-size: 18px;
+  }
+  .page-home .artwork-hint {
+    font-size: 16px;
   }
 }
 @media (max-width: 1100px) and (min-width: 761px) {
@@ -697,6 +829,43 @@ em {
   }
   .site-footer .text-link {
     font-size: 14px;
+  }
+}
+/* Portrait tablets stack a larger headline over a large sculpture, sized so
+ * both fit the first screen instead of leaving an empty lower half. */
+@media (min-width: 761px) and (max-width: 1100px) and (orientation: portrait) {
+  .home-hero {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .hero-copy {
+    padding-top: clamp(40px, 6vh, 96px);
+    padding-bottom: 0;
+  }
+  .headline-sans {
+    font-size: 12.4vw;
+  }
+  .hero-copy h1 em {
+    font-size: 12.1vw;
+  }
+  .hero-subtitle {
+    font-size: clamp(24px, 3.2vw, 34px);
+  }
+  .artwork {
+    position: relative;
+    inset: auto;
+    align-self: flex-end;
+    width: min(80%, calc((100svh - 470px) * 0.8));
+    height: auto;
+    aspect-ratio: 4 / 5;
+    margin: -16vw -2% 0 0;
+  }
+  .artwork-hint {
+    position: relative;
+    inset: auto;
+    align-self: flex-end;
+    margin: 4px 12% 36px 0;
   }
 }
 
@@ -794,7 +963,7 @@ em {
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 0 12px;
-    padding: 16px 0 22px;
+    padding: 16px 0 max(22px, env(safe-area-inset-bottom));
     min-height: 100px;
   }
   .site-footer .text-link,
@@ -936,6 +1105,184 @@ em {
   }
   .product-description {
     font-size: 15px;
+  }
+}
+/* Phones held sideways: a compact header, a headline sized by height and the
+ * sculpture beside it, so nothing important starts below the fold. */
+@media (orientation: landscape) and (max-height: 540px) and (max-width: 1100px) {
+  :root {
+    --gutter: 28px;
+  }
+  .site-header {
+    height: 68px;
+    padding: 10px 0;
+  }
+  .brand {
+    gap: 8px;
+    min-height: 44px;
+  }
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+  }
+  .brand span {
+    font-size: 27px;
+    letter-spacing: -1.3px;
+  }
+  .home-hero {
+    display: block;
+    flex: 1;
+    min-height: calc(100svh - 68px);
+  }
+  .hero-copy {
+    width: max-content;
+    padding: 5svh 0 28px;
+  }
+  .headline-sans {
+    font-size: 17.5svh;
+  }
+  .hero-copy h1 em {
+    font-size: 18svh;
+  }
+  .hero-subtitle {
+    font-size: clamp(16px, 5svh, 22px);
+    margin-top: 3svh;
+  }
+  .launch-status {
+    margin-top: 3svh;
+    font-size: 12px;
+  }
+  .artwork {
+    position: absolute;
+    top: -52px;
+    bottom: 0;
+    right: -1%;
+    width: 50%;
+    height: auto;
+    max-height: none;
+    aspect-ratio: auto;
+    align-self: auto;
+    margin: 0;
+  }
+  .artwork-hint {
+    position: absolute;
+    left: 0;
+    bottom: 18px;
+    margin: 0;
+    align-self: auto;
+  }
+}
+
+/* Arrival choreography and small rewards. Everything here is finite: nothing
+ * loops forever, and reduced motion removes it entirely (below). */
+@media (prefers-reduced-motion: no-preference) {
+  .page-home .headline-sans,
+  .page-home .hero-copy h1 em,
+  .page-home .hero-subtitle,
+  .page-home .launch-status {
+    animation: rise 1.1s var(--ease) both;
+  }
+  .page-home .hero-copy h1 em {
+    animation-delay: 0.1s;
+  }
+  .page-home .hero-subtitle {
+    animation-delay: 0.26s;
+  }
+  .page-home .launch-status {
+    animation-delay: 0.38s;
+  }
+  .page-home .site-header,
+  .page-home .site-footer {
+    animation: arrive 1.4s ease 0.15s both;
+  }
+  .page-home .launch-status > span::after {
+    animation: ping 1.8s var(--ease) 1.2s 2;
+  }
+  .page-home .launch-status > span.is-ping::after {
+    animation: ping 1.5s var(--ease);
+  }
+  .page-home .artwork-hint .icon {
+    animation: nudge 1.5s var(--ease) 1.4s 2;
+  }
+  .page-home .brand-mark.is-celebrating {
+    animation: mark-orbit 1.3s var(--ease);
+  }
+}
+@media (prefers-reduced-motion: no-preference) and (hover: hover) {
+  .page-home .brand:hover .brand-mark {
+    transform: rotate(-16deg) scale(1.08);
+    transition: transform 0.7s var(--spring);
+  }
+  .page-home .text-link:hover .icon {
+    animation: launch 0.6s var(--ease);
+  }
+  .page-home .footer-note:hover .tagline-comparison {
+    transform: scale(1.5) rotate(-10deg);
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(0.3em);
+  }
+}
+@keyframes arrive {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ping {
+  from {
+    opacity: 0.85;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(3.6);
+  }
+}
+@keyframes nudge {
+  35% {
+    transform: translateX(5px);
+  }
+  70% {
+    transform: translateX(-4px);
+  }
+}
+@keyframes mark-orbit {
+  45% {
+    transform: rotate(200deg) scale(1.14);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes launch {
+  40% {
+    transform: translate(10px, -10px);
+    opacity: 0;
+  }
+  41% {
+    transform: translate(-8px, 8px);
+    opacity: 0;
+  }
+}
+/* Print and forced colours use the authored image and plain type: a WebGL
+ * canvas may print blank, and decorative overlays should not compete with
+ * system colours. */
+@media print {
+  .light-field,
+  .headline-sheen {
+    display: none;
+  }
+  .artwork[data-renderer] .artwork-image {
+    opacity: 1;
+    transition: none;
+  }
+}
+@media (forced-colors: active) {
+  .headline-sheen {
+    display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {

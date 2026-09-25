@@ -71,3 +71,43 @@ test('legacy redirects have a canonical destination and usable fallback link', (
     assert.ok(html.includes('<a href='));
   }
 });
+
+test('presentation work leaves the landing copy, links and accessible names unchanged', () => {
+  const body = homePage().slice(homePage().indexOf('<body'));
+  const text = body
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+  assert.equal(
+    text,
+    'Skip to content guni.ai Say hello (opens in a new tab) Learning Upgraded. For humans. For AI. Coming soon A little curiosity guni.ai A billion small brains > one giga brain Merch',
+  );
+  assert.deepEqual(
+    [...body.matchAll(/<a [^>]*href="([^"]+)"/g)].map((match) => match[1]),
+    ['#main', '/', 'https://shital.com', '/', '/merch/'],
+  );
+  assert.deepEqual(
+    [...body.matchAll(/(?:aria-label|alt)="([^"]+)"/g)].map((match) => match[1]),
+    [
+      'guni.ai home',
+      'Two interlocking loops of ivory ceramic and prismatic glass, a symbol of shared learning.',
+      'Explore the learning loop. Move your pointer or touch to bend the light. Use arrow keys to explore, Enter to send a ripple, or Escape to settle the motion.',
+    ],
+  );
+});
+
+test('the sculpture maps stay an exact RGB data texture aligned to the artwork', async () => {
+  const { default: sharp } = await import('sharp');
+  const maps = await sharp('src/assets/learning-loop-maps.png').metadata();
+  const art = await sharp('public/assets/brand/learning-loop.webp').metadata();
+  // An alpha channel would let browsers premultiply away the packed data.
+  assert.equal(maps.channels, 3);
+  assert.ok(!maps.hasAlpha);
+  assert.ok(Math.abs(maps.width / maps.height - art.width / art.height) < 0.002);
+  const path = JSON.parse(readFileSync(new URL('../src/data/loop-path.json', import.meta.url)));
+  assert.ok(path.points.length >= 8);
+  for (const [x, y, z] of path.points) {
+    assert.ok(x > 0 && x < 1 && y > 0 && y < 1 && z >= -1 && z <= 1);
+  }
+});

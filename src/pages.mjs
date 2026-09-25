@@ -51,7 +51,6 @@ export function homePage() {
 <div class="hero-copy"><h1><span class="headline-sans">Learning</span><em>Upgraded.</em></h1><p class="hero-subtitle">For humans. For AI.</p><p class="launch-status"><span aria-hidden="true"></span>Coming soon</p></div>
 <div class="artwork" data-artwork>
 <img class="artwork-image" src="/assets/brand/learning-loop.webp" width="1122" height="1402" alt="Two interlocking loops of ivory ceramic and prismatic glass, a symbol of shared learning." fetchpriority="high" decoding="async">
-<canvas class="artwork-canvas" aria-hidden="true"></canvas>
 <button class="artwork-touch" type="button" aria-label="Explore the learning loop. Move your pointer or touch to bend the light. Use arrow keys to explore, Enter to send a ripple, or Escape to settle the motion." aria-describedby="artwork-hint" hidden></button>
 </div>
 <div class="artwork-hint" id="artwork-hint" hidden><span class="hint-text">A little curiosity</span>${icon('arrows-horizontal')}</div>

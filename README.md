@@ -2,7 +2,7 @@
 
 The coming-soon website for [guni.ai](https://guni.ai): advancing learning technologies for humans and AI.
 
-**Learning Upgraded.** For humans. For AI. The footer carries “A billion small brains > one giga brain”. An interactive ceramic-and-glass sculpture pairs with an orange two-ring mark, Instrument Sans, and Instrument Serif. Brief glass-like fragments invite exploration and retire once the visitor discovers the figure; hover or touch continues to bend its light. A quiet **Merch** link opens the preserved product collection; **Say hello** opens [shital.com](https://shital.com).
+**Learning Upgraded.** For humans. For AI. The footer carries “A billion small brains > one giga brain”. An interactive ceramic-and-glass sculpture pairs with an orange two-ring mark, Instrument Sans, and Instrument Serif. At rest the page is the calm selected design. On arrival the sculpture exhales a breath of light; after that, a hidden GPU swarm of “small brains” appears only where the visitor stirs it. The swarm leads the pointer to the sculpture, relights it, and then learns: holding gathers it, a tap splashes it, and drawing a loop around the sculpture (or swirling a phone) makes it trace the loop. Tilting a phone moves the light, the heading answers the hand, and everything settles back to stillness. A quiet **Merch** link opens the preserved product collection; **Say hello** opens [shital.com](https://shital.com).
 
 ## Run locally
 
@@ -31,8 +31,12 @@ This is a statically generated, multi-page site. Small Node templates generate c
 | `src/data/products.json`               | All 11 original products, purchase URLs, descriptions and galleries  |
 | `src/catalog.mjs`                      | Catalog validation, URL conventions and escaping                     |
 | `src/styles.css`                       | Shared design tokens, typography and responsive layouts              |
-| `src/artwork.ts`                       | Optional WebGL refraction, image fallback and bounded interaction    |
-| `src/curiosity-trail.ts`               | Lightweight SVG pointer invitation, driven by the artwork frame loop |
+| `src/artwork.ts`                       | Input, discovery levels, sensors, settling and the image fallback    |
+| `src/light-field.ts`                   | WebGL2 sculpture relighting and transform-feedback mote swarm        |
+| `src/headline.ts`                      | Presentation-only heading play; real words stay for screen readers   |
+| `src/gestures.ts`                      | Pure loop and arrow-key gesture recognizers (unit tested)            |
+| `src/curiosity-trail.ts`               | SVG pointer invitation used only when WebGL2 is unavailable          |
+| `scripts/sculpture-maps.mjs`           | Derives the sculpture's matte, height and loop-path data map         |
 | `design/concepts/guni-linked-g-v4.png` | Selected Linked G concept, exported for headers and site icons       |
 | `src/main.ts`                          | Catalog filtering/shuffling and product gallery enhancement          |
 | `scripts/generate.mjs`                 | HTML generation, legacy redirects, sitemap and robots.txt            |
@@ -58,7 +62,7 @@ See [deployment and rollback](docs/deployment.md) for the workflow, write-access
 
 Run `npm run format` before committing and `npm run format:check` to check formatting. TypeScript is strict; `npm run check` checks client types. `npm run build` also checks types and verifies the resulting artifact.
 
-Run `npm run test:browser` for repeatable Chromium interaction and responsive checks against a temporary production preview. Puppeteer downloads its test browser during `npm ci`; it is a development dependency and is never shipped to visitors. Screenshots are saved under ignored `.qa/`. The artwork settles on its own after brief motion; system reduced motion keeps it still. No pause button or stored motion preference is used.
+Run `npm run test:browser` for repeatable Chromium interaction and responsive checks against a temporary production preview. Puppeteer downloads its test browser during `npm ci`; it is a development dependency and is never shipped to visitors. Screenshots are saved under ignored `.qa/`. The checks use software WebGL (SwiftShader), which renders only a few frames per second, so they take a few minutes. The artwork settles on its own after brief motion; system reduced motion keeps it still. No pause button or stored motion preference is used.
 
 ## Original website
 

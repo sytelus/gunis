@@ -1,0 +1,31 @@
+{
+  "about": "Centerline of the learning-loop sculpture as a closed, uniform Catmull-Rom spline in image UV (x right, y down). Figure-8 order: s=0 is the top of the upper loop. z marks the crossing: +1 is the glass strand in front, -1 the ceramic strand behind it. Traced by hand from design/assets/learning-loop.png; both scripts/sculpture-maps.mjs and the runtime read it.",
+  "points": [
+    [0.5579, 0.1398, 0],
+    [0.6863, 0.1541, 0],
+    [0.7701, 0.214, 0],
+    [0.7986, 0.3067, 0],
+    [0.7772, 0.3994, 0],
+    [0.713, 0.4708, -0.5],
+    [0.615, 0.525, -1],
+    [0.4902, 0.5592, -1],
+    [0.3654, 0.5877, -0.5],
+    [0.2852, 0.6448, 0],
+    [0.2674, 0.7275, 0],
+    [0.3066, 0.806, 0],
+    [0.41, 0.8516, 0],
+    [0.5348, 0.8602, 0],
+    [0.6506, 0.8345, 0],
+    [0.7308, 0.7703, 0],
+    [0.7576, 0.6776, 0],
+    [0.7219, 0.592, 0.5],
+    [0.6417, 0.5307, 1],
+    [0.5348, 0.4922, 1],
+    [0.4189, 0.4593, 0.5],
+    [0.3209, 0.4108, 0],
+    [0.2816, 0.331, 0],
+    [0.303, 0.2425, 0],
+    [0.3832, 0.174, 0],
+    [0.467, 0.1455, 0]
+  ]
+}

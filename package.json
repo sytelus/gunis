@@ -11,7 +11,7 @@
     "build": "node scripts/generate.mjs && tsc --noEmit && vite build && node scripts/verify-build.mjs",
     "preview": "vite preview",
     "check": "tsc --noEmit",
-    "test": "node --test tests/*.test.mjs",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
     "test:browser": "npm run build && node scripts/check-browser.mjs",
     "prepare:assets": "node scripts/prepare-assets.mjs",
     "prepare:social": "npm run build && node scripts/check-browser.mjs --social",
