@@ -1,5 +1,19 @@
 # Design QA
 
+## Puzzle clarity and fireflies — September 26, 2026
+
+Owner feedback: the sparkles distracted once the visitor had arrived, and the puzzle was not intuitive. Changes: after discovery, stirring the page raises no sparkles; 7% of the swarm become golden fireflies contained in the sculpture, drawn to the pointer (`docs/qa/fireflies.jpg`). The puzzle now shows its goal and actions: hover jiggle and seams, orange beads with a fixed marker (line them up), grey rings until home, independent rings, tap to turn a step or drag like a dial, Left/Right keys (`docs/qa/game-puzzle.jpg`). Browser checks add: no page sparkles after discovery, a drag turning exactly one ring one step, Escape leaving no beads behind (a bug the check caught). The JavaScript gate is now 80 KB at the owner's direction.
+
+## Sculpture puzzle revision — September 25, 2026
+
+Owner request: evolve the sculpture into an intriguing, wordless puzzle whose solution reveals a second sculpture with more surprising GPU animation, consistent with the site's theme, without new or changed text.
+
+- **Puzzle.** A touch twists the picture into three rings; out-of-place rings turn grey (`docs/qa/game-puzzle.jpg`). A tap turns a ring and the ring outside it; inside-out always solves it; scrambles need 4–7 turns. Hovered or keyboard-selected rings glow. No new text or announcements; the existing accessible name and announcement are unchanged.
+- **Reveal.** The picture dissolves into the swarm, which forms two linked, raymarched 3D rings of glass and ceramic, with dispersion, refraction of one ring through the other, thin-film colour and caustic floor light (`docs/qa/game-reveal.jpg`, `docs/qa/game-sculpture.jpg`, phone: `docs/qa/game-phone.jpg`).
+- **Motion and fallbacks.** Everything still settles to a still frame; Escape and reduced motion make the picture whole; an abandoned puzzle heals after 45 s; without WebGL2 there is no puzzle.
+- **Checks.** Unit tests cover turn coupling, solvability of all 64 arrangements, scramble difficulty and ring hit-testing. Browser checks cover starting the puzzle by click, Escape, a full keyboard solve, the reveal under software WebGL, the revealed still frame and reduced motion abandoning a puzzle. JavaScript is 61.3 KB; the gate was raised from 60 to 64 KB, and shaders are now minified at build time.
+- **Limits.** Chromium only (SwiftShader and llvmpipe). Raymarching cost on iPhone/iPad GPUs and Safari's shader compiler need a device check; quality falls back automatically on slow frames.
+
 ## Cabinet of curiosities revision — September 25, 2026
 
 Owner request: make the merch page's UX fun and awe-inspiring, with novel ideas. Presentation only: products, copy, links, filters and purchase paths are unchanged, and everything works without JavaScript.

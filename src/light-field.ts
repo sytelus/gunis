@@ -17,6 +17,8 @@
  * by creating a WebGL2 context; no GPU vendor or renderer strings are read.
  */
 
+import { CENTER, RADII } from './puzzle';
+
 export type LoopPoint = readonly [number, number, number];
 export type Rect = { x: number; y: number; w: number; h: number };
 
@@ -35,6 +37,9 @@ export type FieldState = {
   ripples: Float32Array; // 4 x (xy page px, age s, strength)
   glow: Float32Array; // loop-run position, run strength, upgraded 0..1, sweep (<0 off)
   flash: Float32Array; // release glow on the sculpture, unused x3
+  rings: Float32Array; // ring angles x3 (rad), cut 0..1; vivid x3 (0..1), highlighted ring (-1 none)
+  orb: Float32Array; // picture dissolve 0..1, sculpture 0..1, yaw, pitch; pulse position, pulse strength, quality, puzzle beads 0..1
+  contain: Float32Array; // fireflies 0..1, tube radius px, share of the swarm, pointer pull 0..1
   count: number;
 };
 
@@ -42,6 +47,8 @@ export type LightField = {
   capacity: number;
   resize(width: number, height: number, ratio: number): void;
   place(art: Rect): void;
+  /** Replaces the swarm's path (64 x page xy + depth), or restores the loop. */
+  route(points: Float32Array | null): void;
   frame(state: FieldState, simulate: boolean): void;
   dispose(): void;
 };
@@ -62,6 +69,9 @@ export function createFieldState(): FieldState {
     ripples: vec(16),
     glow: new Float32Array([0, 0, 0, -1]),
     flash: vec(4),
+    rings: new Float32Array([0, 0, 0, 0, 1, 1, 1, -1]),
+    orb: vec(8),
+    contain: vec(4),
     count: 0,
   };
 }
@@ -83,6 +93,38 @@ export function sampleLoop(points: readonly LoopPoint[], count: number): Float32
           (p2[c] - p0[c]) * t +
           (2 * p0[c] - 5 * p1[c] + 4 * p2[c] - p3[c]) * t * t +
           (3 * p1[c] - p0[c] - 3 * p2[c] + p3[c]) * t * t * t);
+  }
+  return out;
+}
+
+/** The revealed sculpture: two linked rings, glass above and ceramic below,
+ * as in the picture. Object space is y up; the camera looks down -z. */
+export const ORB = { distance: 3.6, focal: 1.5, radius: 0.55, tube: 0.17, offset: 0.35 };
+
+function toWorld(x: number, y: number, z: number, yaw: number, pitch: number) {
+  const c = Math.cos(pitch);
+  const s = Math.sin(pitch);
+  [y, z] = [y * c - z * s, y * s + z * c];
+  const cy = Math.cos(yaw);
+  const sy = Math.sin(yaw);
+  return [x * cy + z * sy, y, -x * sy + z * cy];
+}
+
+/** Projects both rings' centrelines into page pixels (32 samples each), so
+ * the swarm can form and flow along the real sculpture. */
+export function projectOrb(art: Rect, yaw: number, pitch: number, out: Float32Array) {
+  const { distance, focal, radius, offset } = ORB;
+  const aspect = art.w / art.h;
+  for (let k = 0; k < PATH_SAMPLES; k++) {
+    const glass = k < PATH_SAMPLES / 2;
+    const a = ((k % (PATH_SAMPLES / 2)) / (PATH_SAMPLES / 2)) * Math.PI * 2 - Math.PI / 2;
+    const [x, y, z] = glass
+      ? toWorld(radius * Math.cos(a), offset + radius * Math.sin(a), 0, yaw, pitch)
+      : toWorld(0, -offset - radius * Math.sin(a), radius * Math.cos(a), yaw, pitch);
+    const scale = focal / (distance - z);
+    out[k * 3] = art.x + (0.5 + (x * scale) / aspect) * art.w;
+    out[k * 3 + 1] = art.y + (0.5 - y * scale) * art.h;
+    out[k * 3 + 2] = Math.max(-1, Math.min(1, z / 0.72));
   }
   return out;
 }
@@ -124,7 +166,7 @@ out vec2 v_pos;
 out vec2 v_vel;
 out vec4 v_data;
 uniform vec2 u_size;
-uniform vec4 u_step,u_pointer,u_motion,u_art,u_field,u_charge,u_emit,u_shake;
+uniform vec4 u_step,u_pointer,u_motion,u_art,u_field,u_charge,u_emit,u_shake,u_contain;
 uniform sampler2D u_maps;
 uniform vec3 u_path[${PATH_SAMPLES}];
 ${NOISE}
@@ -151,7 +193,7 @@ void main(){
   vec2 a=u_pointer.zw,ba=u_pointer.xy+u_motion.xy*u_motion.w-a,pa=p-a;
   vec2 dv=pa-ba*clamp(dot(pa,ba)/max(dot(ba,ba),1.),0.,1.);
   float R=clamp(unit*.085,46.,130.)*(.7+z*.6);
-  float w=exp(-dot(dv,dv)/(R*R))*u_motion.z,ps=length(u_motion.xy);
+  float w=exp(-dot(dv,dv)/(R*R))*u_motion.z*(1.-u_contain.x),ps=length(u_motion.xy);
   vec2 swirl=vec2(-dv.y,dv.x)/(length(dv)+14.)*min(ps,1400.)*(seed-.5)*1.6;
   v=mix(v,u_motion.xy*(.45+.6*seed)+swirl,clamp(w*dt*8.,0.,1.));
   e=max(e,w*(.3+.7*clamp(ps/520.,0.,1.))*(.55+.45*seed));
@@ -197,6 +239,43 @@ void main(){
     v=mix(v,tang*(150.+200.*seed)*u_step.w+(target-p)*mix(3.,7.,form),clamp(grip*dt*mix(3.,6.,form),0.,1.));
     e=max(e,form*.9);
   }
+  // Once the sculpture is found the sparkles have done their job on the page:
+  // a share of them live inside the sculpture instead, swimming along its
+  // loop like fireflies in glass, leaning toward the pointer, turned back at
+  // the walls. Everyone else fades away. Containment follows the path, so it
+  // fits the picture and the revealed 3D rings alike.
+  if(u_contain.x>0.&&form<.001){
+    if(seed>=u_contain.z)e*=exp(-dt*5.*u_contain.x);
+    else{
+      float best=1e12;int bi=0;
+      for(int i=0;i<${PATH_SAMPLES};i++){vec2 d=u_path[i].xy-p;float q=dot(d,d);if(q<best){best=q;bi=i;}}
+      vec2 c0=u_path[bi].xy,tang=normalize(u_path[(bi+1)&${PATH_SAMPLES - 1}].xy-u_path[(bi+${PATH_SAMPLES - 1})&${PATH_SAMPLES - 1}].xy+1e-4);
+      vec2 off=p-c0;
+      float dist=length(off),tube=u_contain.y,depthIn=tube*(.3+.7*fract(seed*9.7));
+      if(dist>tube*2.5&&e<.05){
+        // Arrive somewhere on the loop, dark, and fade in.
+        int j=int(rand(seed,t)*${PATH_SAMPLES}.)&${PATH_SAMPLES - 1};
+        vec2 tj=normalize(u_path[(j+1)&${PATH_SAMPLES - 1}].xy-u_path[j].xy+1e-4);
+        p=u_path[j].xy+vec2(-tj.y,tj.x)*(rand(t,seed)-.5)*tube*1.4;
+        v=vec2(0);
+        off=p-u_path[j].xy;dist=length(off);
+      }
+      float dir=fract(seed*3.1)<.5?-1.:1.;
+      v+=tang*dir*(30.+70.*seed)*dt*3.;
+      v+=curl(p/(tube*1.6),t*.6+seed)*140.*dt;
+      vec2 tp=u_pointer.xy-p;
+      float pd=length(tp)+1.;
+      v+=tp/pd*u_contain.w*1100.*exp(-pd/(tube*5.))*dt;
+      if(dist>depthIn){
+        vec2 n=off/max(dist,1e-3);
+        float outward=dot(v,n);
+        if(outward>0.)v-=n*outward*1.7;
+        v-=n*(dist-depthIn)*6.;
+      }
+      e+=(.8*u_contain.x-e)*min(dt*1.8,1.);
+      mode=0.;
+    }
+  }
   v*=exp(-dt*(1.1+calm*9.+step(.5,mode)*.4));
   // Invited motes glow a little longer, so the stream visibly reaches the sculpture.
   e*=exp(-dt*(.85-.2*u_field.y+calm*6.+step(.5,mode)*.35));
@@ -222,6 +301,7 @@ layout(location=2) in vec4 a_data;
 layout(location=3) in vec2 a_corner;
 uniform vec2 u_size;
 uniform vec4 u_art,u_light,u_view;
+uniform vec2 u_firefly;
 uniform float u_time;
 uniform sampler2D u_maps;
 out vec2 v_q;
@@ -244,15 +324,18 @@ void main(){
   float over=all(greaterThan(uv,vec2(0)))&&all(lessThan(uv,vec2(1)))?textureLod(u_maps,uv,0.).r:0.;
   // Far motes pass behind the sculpture; loop motes hide where their strand
   // runs behind the glass.
+  // Fireflies live inside the sculpture: never hidden by it, they twinkle.
+  float fly=u_firefly.x*step(seed,u_firefly.y);
   if(kind>.5)a*=1.-.75*behind*over;
-  else if(z<.42)a*=1.-.92*over;
+  else if(z<.42)a*=1.-.92*over*(1.-fly);
+  a*=1.-fly*(.45-.45*sin(u_time*(1.7+seed*2.6)+seed*47.));
   if(a<.01){gl_Position=vec4(2,2,2,1);return;}
   // Over the artwork and along the loop, motes are light, not dust.
   float lit=max(clamp(g*1.6,0.,1.),max(over*.85,step(.5,kind)));
-  float px=1./u_view.y,w=mix(1.1,2.4,z)*(.8+.4*min(e,1.))*(1.+g*.8+lit*.25)*mix(1.,.7,smoothstep(200.,1200.,speed)),len=w+min(speed*.011,22.);
+  float px=1./u_view.y,w=mix(1.1,2.4,z)*(.8+.4*min(e,1.))*(1.+g*.8+lit*.25+fly*1.3)*mix(1.,.7,smoothstep(200.,1200.,speed)),len=w+min(speed*.011,22.);
   float W=max(w,1.5*px),Lq=max(len,1.5*px);
   a*=min(1.,w*len/(W*Lq)); // sub-pixel motes fade instead of shimmering
-  float glow=max(g,lit*.55),pad=1.+glow*2.2;
+  float glow=max(max(g,lit*.55),fly*.85),pad=1.+glow*2.2;
   vec2 q=p+(dir*a_corner.x*Lq+vec2(-dir.y,dir.x)*a_corner.y*W)*.5*pad;
   gl_Position=vec4(q/u_size*2.-1.,0,1);
   gl_Position.y=-gl_Position.y;
@@ -262,7 +345,9 @@ void main(){
   float h=fract(mix(seed*3.,atan(fromArt.y,fromArt.x)*.159+u_time*.12,step(.5,kind))+u_time*.04)*5.;
   int i=int(h);
   vec3 flash=mix(GLINT[i],GLINT[(i+1)%5],fract(h));
-  v_color=vec4(mix(CORE[int(seed*6.)%6],flash,lit),clamp(a,0.,1.));
+  vec3 warm=mix(vec3(1.,.74,.32),vec3(1.,.5,.32),fract(seed*7.3));
+  warm=mix(warm,flash,step(.8,fract(seed*5.9))*.8);
+  v_color=vec4(mix(mix(CORE[int(seed*6.)%6],flash,lit),warm,fly),clamp(a,0.,1.));
   v_glint=clamp(glow,0.,1.);
 }`;
 
@@ -301,11 +386,13 @@ precision highp int;
 in vec2 v_uv;
 out vec4 o;
 uniform sampler2D u_image,u_maps;
-uniform vec4 u_art,u_light,u_lens,u_charge,u_glow,u_floor;
+uniform vec4 u_art,u_light,u_lens,u_charge,u_glow,u_floor,u_rings,u_ringFx;
 uniform vec4 u_ripples[4];
 uniform vec3 u_paper;
-uniform float u_time;
+uniform float u_time,u_dissolve,u_beads;
 ${NOISE}
+const vec2 C=vec2(${CENTER.x},${CENTER.y});
+const vec3 RR=vec3(${RADII.join(',')});
 // The artwork's baked key light comes from the upper left (y points down).
 const vec3 L0=vec3(-.36,-.52,.77);
 vec3 hue(vec3 c,float a){
@@ -322,6 +409,18 @@ void main(){
   // Feather the studio backdrop into the page paper, as the image fallback does.
   float edge=smoothstep(0.,.065,uv.x)*smoothstep(0.,.065,1.-uv.x)*smoothstep(0.,.055,uv.y)*smoothstep(0.,.055,1.-uv.y);
   if(edge<.002){o=vec4(0);return;}
+  // Puzzle: the picture is cut into concentric rings, each turned by its own
+  // angle. Everything (colour, shape, path) is read through the turn, so a
+  // turned ring carries its highlights with it like a real object.
+  vec2 pc=(uv-C)*k;
+  float rr=length(pc);
+  int ring=rr<RR.x?0:rr<RR.y?1:rr<RR.z?2:3;
+  float cut=u_rings.w;
+  if(cut>0.&&ring<3){
+    float a=ring==0?u_rings.x:ring==1?u_rings.y:u_rings.z;
+    float c=cos(a),sn=sin(a);
+    uv=clamp(C+mat2(c,sn,-sn,c)*pc/k,vec2(.001),vec2(.999));
+  }
   vec2 size=vec2(textureSize(u_maps,0));
   vec3 m=texture(u_maps,uv).rgb;
   float body=m.r,act=u_light.z;
@@ -396,7 +495,209 @@ void main(){
   float rim=(lr-.95)*14.;
   col+=exp(-rim*rim)*u_lens.z*.05;
   col+=u_paper;
-  o=vec4(clamp(col,0.,1.)*edge,edge);
+  if(cut>0.){
+    // A ring out of place loses its colour; in place, it blooms back. The
+    // seams are fine cuts with a prismatic edge; the highlighted ring glows.
+    float vivid=ring==0?u_ringFx.x:ring==1?u_ringFx.y:ring==2?u_ringFx.z:1.;
+    float g=dot(col,vec3(.2126,.7152,.0722));
+    col=mix(col,vec3(g)*vec3(1.01,1.,.98),(1.-vivid)*.85*cut);
+    vec3 sd=abs(rr-RR);
+    float sm=min(sd.x,min(sd.y,sd.z))/.0026;
+    float seam=exp(-sm*sm)*cut;
+    int h=int(u_ringFx.w+.5);
+    float inner=h>0?(h==1?RR.x:RR.y):-1.,outer=h==0?RR.x:h==1?RR.y:RR.z;
+    float di=(rr-inner)/.005,dout=(rr-outer)/.005;
+    float hot=u_ringFx.w<-.5?0.:(exp(-dout*dout)+exp(-di*di))*cut;
+    col*=1.-seam*.3;
+    col+=(seam*.35+hot*.6)*(spectrum(atan(pc.y,pc.x)*.159+u_time*.08)*.8+.25);
+  }
+  if(u_beads>0.){
+    // The goal, without words: each ring carries an orange bead; a fixed
+    // marker at the top shows where every bead belongs. A faint spoke joins
+    // the home positions. A bead at home glows.
+    const vec3 ORANGE=vec3(.87,.28,.13);
+    float spoke=(1.-smoothstep(.0012,.0028,abs(pc.x)))*step(pc.y,-RR.x*.3)*step(-RR.z+.03,pc.y);
+    col=mix(col,ORANGE,spoke*.18*u_beads);
+    vec3 mids=vec3(RR.x*.62,(RR.x+RR.y)*.5,(RR.y+RR.z)*.5);
+    for(int i=0;i<3;i++){
+      float a=i==0?u_rings.x:i==1?u_rings.y:u_rings.z;
+      float v=i==0?u_ringFx.x:i==1?u_ringFx.y:u_ringFx.z;
+      vec2 b=vec2(-sin(a),-cos(a))*mids[i];
+      float d=length(pc-b);
+      col=mix(col,mix(ORANGE,vec3(1.,.78,.45),v),(1.-smoothstep(.009,.013,d))*u_beads);
+      col+=ORANGE*exp(-d*d/.0009)*(.25+.6*v)*u_beads;
+    }
+    vec2 tq=pc-vec2(0.,-RR.z+.012);
+    float tri=max(-.012-tq.y,abs(tq.x)-.016*(.012-tq.y)/.024);
+    col=mix(col,ORANGE,(1.-smoothstep(-.001,.001,tri))*u_beads);
+  }
+  float alpha=edge;
+  if(u_dissolve>0.){
+    // The picture comes apart into light, grain by grain.
+    float nz=noised(v_uv*vec2(46.,58.)).x*.65+noised(v_uv*vec2(8.,10.)+3.).x*.35;
+    float th=u_dissolve*1.2-.12;
+    if(nz<th){o=vec4(0);return;}
+    col+=smoothstep(.07,0.,nz-th)*(spectrum(nz*4.+u_time*.4)*.9+.35);
+  }
+  o=vec4(clamp(col,0.,1.)*alpha,alpha);
+}`;
+
+// The revealed sculpture, raymarched: two linked rings (prismatic glass and
+// ceramic), a studio environment, refraction with dispersion through the
+// glass (the ceramic ring is seen through it), thin-film colour, ambient
+// occlusion, soft shadows and coloured caustic light on the floor.
+const ORB_FS = `#version 300 es
+precision highp float;
+precision highp int;
+in vec2 v_uv;
+out vec4 o;
+uniform vec4 u_art,u_orb,u_orbFx,u_light;
+uniform vec3 u_ground;
+uniform float u_time;
+${NOISE}
+const float D=${ORB.distance.toFixed(3)},F=${ORB.focal.toFixed(3)},R=${ORB.radius.toFixed(3)},T=${ORB.tube.toFixed(3)},OFF=${ORB.offset.toFixed(3)},FLOOR=-1.12;
+vec3 spectrum(float h){return clamp(abs(fract(h+vec3(0.,.6667,.3333))*6.-3.)-1.,0.,1.);}
+vec3 rotY(vec3 v,float a){float c=cos(a),s=sin(a);return vec3(v.x*c+v.z*s,v.y,-v.x*s+v.z*c);}
+vec3 rotX(vec3 v,float a){float c=cos(a),s=sin(a);return vec3(v.x,v.y*c-v.z*s,v.y*s+v.z*c);}
+vec3 toObj(vec3 v){return rotX(rotY(v,-u_orb.z),-u_orb.w);}
+vec3 toWorld(vec3 v){return rotY(rotX(v,u_orb.w),u_orb.z);}
+float glassD(vec3 p){p.y-=OFF;return length(vec2(length(p.xy)-R,p.z))-T;}
+float clayD(vec3 p){p.y+=OFF;return length(vec2(length(p.yz)-R,p.x))-T;}
+vec2 scene(vec3 p){float a=glassD(p),b=clayD(p);return a<b?vec2(a,0.):vec2(b,1.);}
+vec3 glassN(vec3 p){const vec2 e=vec2(.0012,-.0012);return normalize(e.xyy*glassD(p+e.xyy)+e.yyx*glassD(p+e.yyx)+e.yxy*glassD(p+e.yxy)+e.xxx*glassD(p+e.xxx));}
+vec3 clayN(vec3 p){const vec2 e=vec2(.0012,-.0012);return normalize(e.xyy*clayD(p+e.xyy)+e.yyx*clayD(p+e.yyx)+e.yxy*clayD(p+e.yxy)+e.xxx*clayD(p+e.xxx));}
+const vec3 L=vec3(-.5,.7,.52);
+// A studio for the glass to refract: a paper sweep that darkens toward a
+// horizon, a warm floor, a large warm softbox upper left, a cool strip light
+// at the right and a thin top light. Clear glass only shows its shape by
+// what it bends, so the studio needs this structure.
+vec3 env(vec3 d){
+  vec3 c=mix(u_ground*.74,u_ground*1.07,smoothstep(-.25,.85,d.y));
+  float hz=(d.y+.04)/.07;
+  c*=1.-.22*exp(-hz*hz);
+  c+=vec3(1.,.92,.8)*smoothstep(.9,.985,dot(d,normalize(L)))*2.;
+  c+=vec3(.7,.86,1.)*smoothstep(.955,.996,dot(d,normalize(vec3(.85,.18,-.45))))*1.6;
+  c+=vec3(1.)*smoothstep(.985,.999,dot(d,normalize(vec3(.1,1.,.25))))*1.3;
+  return mix(c,vec3(.72,.63,.53),(1.-smoothstep(-.55,-.04,d.y))*.6);
+}
+float soft(vec3 p,vec3 d,bool glass){
+  float s=1.,t=.02;
+  for(int i=0;i<14;i++){
+    float h=glass?glassD(p+d*t):clayD(p+d*t);
+    s=min(s,10.*h/t);
+    t+=clamp(h,.03,.25);
+    if(s<.01||t>2.5)break;
+  }
+  return clamp(s,0.,1.);
+}
+vec3 ceramic(vec3 p,vec3 n,vec3 rdW,float full){
+  vec3 nw=toWorld(n),Lw=normalize(L);
+  float dif=pow(clamp(dot(nw,Lw)*.5+.5,0.,1.),1.7);
+  float ao=1.;
+  if(full>.5){
+    float h1=scene(p+n*.05).x,h2=scene(p+n*.14).x;
+    ao=clamp(1.-(.05-h1)*5.-(.14-h2)*1.6,.35,1.);
+    dif*=mix(.62,1.,soft(p+n*.01,toObj(Lw),true));
+  }
+  vec3 alb=vec3(.96,.89,.79)*(.95+.05*noised(p.xy*55.+p.z*31.).x);
+  vec3 c=alb*(.32+.78*dif)*ao;
+  float fr=pow(1.-max(dot(nw,-rdW),0.),5.);
+  c+=env(reflect(rdW,nw))*(.035+.3*fr)*ao;
+  c+=vec3(1.,.55,.3)*pow(1.-max(dot(nw,-rdW),0.),3.)*.05;
+  return c;
+}
+// Rays leaving the glass: the ceramic ring, or the studio.
+vec3 beyond(vec3 p,vec3 d){
+  float t=0.;
+  for(int i=0;i<36;i++){
+    float h=clayD(p+d*t);
+    if(h<.002)return ceramic(p+d*t,clayN(p+d*t),toWorld(d),0.);
+    t+=h;
+    if(t>3.)break;
+  }
+  return env(toWorld(d));
+}
+vec3 glassShade(vec3 p,vec3 n,vec3 rd){
+  float cosi=max(dot(-rd,n),0.),fr=.04+.96*pow(1.-cosi,5.);
+  vec3 refl=env(toWorld(reflect(rd,n)));
+  vec3 ri=refract(rd,n,1./1.46),q=p-n*.004;
+  float travel=0.;
+  for(int i=0;i<40;i++){
+    float d=-glassD(q);
+    if(d<.0015)break;
+    q+=ri*max(d,.004);
+    travel+=max(d,.004);
+    if(travel>1.4)break;
+  }
+  vec3 nOut=glassN(q),trans;
+  if(u_orbFx.z>.5){
+    for(int c=0;c<3;c++){
+      float ior=1.42+float(c)*.055;
+      vec3 d=refract(ri,-nOut,ior);
+      if(dot(d,d)<.01)d=reflect(ri,-nOut);
+      trans[c]=beyond(q+nOut*.006,d)[c];
+    }
+  }else{
+    vec3 d=refract(ri,-nOut,1.46);
+    if(dot(d,d)<.01)d=reflect(ri,-nOut);
+    trans=beyond(q+nOut*.006,d);
+    trans=mix(trans,trans.gbr,.08);
+  }
+  // Thick glass tints faintly toward the spectrum along its path.
+  trans*=exp(-travel*vec3(.26,.13,.07))*mix(vec3(1),spectrum(travel*1.4+cosi*.9+p.x*.6)*1.25,.1);
+  vec3 film=spectrum(cosi*2.2+u_time*.035+p.y*.7)*(.1+.55*fr);
+  return mix(trans,refl,fr)+film*.28;
+}
+void main(){
+  vec2 q=vec2((v_uv.x-.5)*u_art.z/u_art.w,.5-v_uv.y);
+  vec3 roW=vec3(0,0,D),rdW=normalize(vec3(q,-F));
+  vec3 ro=toObj(roW),rd=toObj(rdW);
+  float edge=smoothstep(0.,.05,v_uv.x)*smoothstep(0.,.05,1.-v_uv.x)*smoothstep(0.,.04,v_uv.y)*smoothstep(0.,.04,1.-v_uv.y);
+  // March from the bounding sphere.
+  float b=dot(ro,rd),c=dot(ro,ro)-1.45*1.45,disc=b*b-c,t=0.,id=-1.;
+  if(disc>0.){
+    t=max(0.,-b-sqrt(disc));
+    float tEnd=-b+sqrt(disc);
+    for(int i=0;i<90;i++){
+      vec2 h=scene(ro+rd*t);
+      if(h.x<.0012){id=h.y;break;}
+      t+=h.x;
+      if(t>tEnd)break;
+    }
+  }
+  float show=u_orb.y;
+  vec3 col=vec3(0);
+  float alpha=0.;
+  if(id>=0.){
+    vec3 p=ro+rd*t;
+    // Materialize: the rings grow out of light.
+    float nz=noised(p.xy*7.+p.z*5.).x*.7+noised(p.yz*19.).x*.3,th=show*1.25-.12;
+    if(nz<th){
+      vec3 n=id<.5?glassN(p):clayN(p);
+      col=id<.5?glassShade(p,n,rd):ceramic(p,n,rdW,1.);
+      // A pulse of light runs around both rings.
+      float ang=id<.5?atan(p.y-OFF,p.x):atan(p.z,-(p.y+OFF));
+      float s=fract(ang*.159+.5),ds=abs(fract(s-u_orbFx.x+.5)-.5);
+      col+=exp(-ds*ds/.0025)*u_orbFx.y*(spectrum(s*2.+u_time*.2)*.7+.35);
+      // The pointer's light catches the surface.
+      col+=pow(max(dot(toWorld(n),normalize(vec3(u_light.x,-u_light.y,1.))),0.),40.)*u_light.z*.35;
+      col+=smoothstep(.08,0.,th-nz)*(spectrum(nz*5.+u_time*.5)*1.1+.4)*step(show,.999);
+      alpha=1.;
+    }
+  }
+  if(alpha<1.&&rdW.y<0.){
+    // Floor: soft shadows of both rings; the glass throws coloured light.
+    vec3 fp=roW+rdW*((FLOOR-roW.y)/rdW.y);
+    vec3 fo=toObj(fp),lo=toObj(normalize(L));
+    float sc=soft(fo,lo,false),sg=soft(fo,lo,true);
+    float reach=exp(-dot(fp.xz,fp.xz)*.9);
+    vec3 f=u_ground*(1.-.42*(1.-sc)*reach);
+    f+=(1.-sg)*reach*(spectrum(atan(fp.z,fp.x)*.3+fp.x*.8+u_time*.03)*.22+vec3(.1,.075,.04));
+    col=f;
+    alpha=reach*show;
+  }
+  alpha*=edge;
+  o=vec4(clamp(col,0.,1.)*alpha,alpha);
 }`;
 
 function compile(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader {
@@ -469,7 +770,11 @@ export function createLightField(
   image: HTMLImageElement,
   maps: HTMLImageElement,
   path: readonly LoopPoint[],
-  options: { paper: [number, number, number]; floor: [number, number, number, number] },
+  options: {
+    paper: [number, number, number];
+    ground: [number, number, number];
+    floor: [number, number, number, number];
+  },
 ): LightField | null {
   const gl = canvas.getContext('webgl2', {
     alpha: true,
@@ -510,6 +815,7 @@ export function createLightField(
         'u_charge',
         'u_emit',
         'u_shake',
+        'u_contain',
         'u_maps',
         'u_path',
       ],
@@ -520,6 +826,7 @@ export function createLightField(
       'u_art',
       'u_light',
       'u_view',
+      'u_firefly',
       'u_time',
       'u_maps',
     ]);
@@ -536,8 +843,21 @@ export function createLightField(
       'u_ripples',
       'u_paper',
       'u_time',
+      'u_rings',
+      'u_ringFx',
+      'u_dissolve',
+      'u_beads',
     ]);
-    owned.programs.push(sim.program, motes.program, art.program);
+    const orb = build(gl, ART_VS, ORB_FS, [
+      'u_size',
+      'u_art',
+      'u_orb',
+      'u_orbFx',
+      'u_light',
+      'u_ground',
+      'u_time',
+    ]);
+    owned.programs.push(sim.program, motes.program, art.program, orb.program);
     const imageTexture = texture(gl, image, false);
     const mapsTexture = texture(gl, maps, true);
     owned.textures.push(imageTexture, mapsTexture);
@@ -603,6 +923,8 @@ export function createLightField(
     gl.uniform1i(art.uniforms.u_maps, 1);
     gl.uniform3fv(art.uniforms.u_paper, options.paper);
     gl.uniform4fv(art.uniforms.u_floor, options.floor);
+    gl.useProgram(orb.program);
+    gl.uniform3fv(orb.uniforms.u_ground, options.ground);
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, imageTexture);
     gl.activeTexture(gl.TEXTURE1);
@@ -622,6 +944,7 @@ export function createLightField(
     let height = 1;
     let ratio = 1;
     let current = 0;
+    let routed = false;
 
     return {
       capacity: CAPACITY,
@@ -632,8 +955,14 @@ export function createLightField(
         canvas.height = Math.max(1, Math.min(maxSize, Math.round(height * pixelRatio)));
         ratio = canvas.width / width;
       },
+      route(points) {
+        routed = !!points;
+        if (points) pathPixels.set(points);
+        else this.place({ x: artRect[0], y: artRect[1], w: artRect[2], h: artRect[3] });
+      },
       place(rect) {
         artRect.set([rect.x, rect.y, rect.w, rect.h]);
+        if (routed) return;
         for (let i = 0; i < PATH_SAMPLES; i++) {
           pathPixels[i * 3] = rect.x + loop[i * 3] * rect.w;
           pathPixels[i * 3 + 1] = rect.y + loop[i * 3 + 1] * rect.h;
@@ -657,6 +986,7 @@ export function createLightField(
           gl.uniform4fv(u.u_charge, state.charge);
           gl.uniform4fv(u.u_emit, state.emit);
           gl.uniform4fv(u.u_shake, state.shake);
+          gl.uniform4fv(u.u_contain, state.contain);
           gl.uniform3fv(u.u_path, pathPixels);
           gl.bindVertexArray(simArrays[current]);
           gl.bindTransformFeedback(gl.TRANSFORM_FEEDBACK, feedback);
@@ -705,8 +1035,23 @@ export function createLightField(
         }
         gl.uniform4fv(u.u_ripples, ripplesUv);
         gl.uniform4fv(u.u_glow, state.glow);
+        gl.uniform4fv(u.u_rings, state.rings.subarray(0, 4));
+        gl.uniform4fv(u.u_ringFx, state.rings.subarray(4, 8));
+        gl.uniform1f(u.u_dissolve, state.orb[0]);
+        gl.uniform1f(u.u_beads, state.orb[7]);
         gl.bindVertexArray(artArray);
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        if (state.orb[0] < 1) gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        if (state.orb[1] > 0) {
+          const w = orb.uniforms;
+          gl.useProgram(orb.program);
+          gl.uniform2f(w.u_size, width, height);
+          gl.uniform4fv(w.u_art, artRect);
+          gl.uniform4fv(w.u_orb, state.orb.subarray(0, 4));
+          gl.uniform4fv(w.u_orbFx, state.orb.subarray(4, 8));
+          gl.uniform4fv(w.u_light, state.light);
+          gl.uniform1f(w.u_time, time);
+          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        }
 
         if (state.view[0] > 0 && state.count > 0) {
           const v = motes.uniforms;
@@ -716,6 +1061,7 @@ export function createLightField(
           gl.uniform4fv(v.u_light, state.light);
           gl.uniform4f(v.u_view, state.view[0], ratio, state.view[1], state.view[2]);
           gl.uniform1f(v.u_time, time);
+          gl.uniform2f(v.u_firefly, state.contain[0], state.contain[2]);
           gl.bindVertexArray(drawArrays[current]);
           gl.drawArraysInstanced(gl.TRIANGLE_STRIP, 0, 4, Math.min(state.count, CAPACITY));
         }

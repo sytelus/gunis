@@ -221,6 +221,13 @@ try {
       () => document.querySelector('[data-artwork]').dataset.invite === 'off',
     );
     assert.equal((await data(desktop)).level, '1');
+    // Found: the sparkles now live inside the sculpture. Stirring the empty
+    // page no longer raises any.
+    const empty = await pixels(desktop, whitespace);
+    for (let i = 1; i <= 12; i++) await desktop.mouse.move(60 + i * 40, 760 + (i % 3) * 30);
+    await sleep(300);
+    const quietPage = changed(empty, await pixels(desktop, whitespace));
+    assert.ok(quietPage < 25, `no sparkles on the page after discovery (${quietPage})`);
 
     // Hold to gather, release to burst: the swarm learns (level 2).
     await desktop.mouse.move(300, 820, { steps: 3 });
@@ -412,8 +419,10 @@ try {
     await counted.goto(origin, { waitUntil: 'networkidle0' });
     await counted.waitForSelector('.artwork-touch:not([hidden])');
     await settled(counted);
-    const tap = await figurePoint(counted, 0.6, 0.45);
-    await counted.mouse.click(tap.x, tap.y);
+    // Discover with the keyboard: a tap on the figure would start the puzzle.
+    await counted.focus('.artwork-touch');
+    await counted.keyboard.press('ArrowRight');
+    await counted.evaluate(() => document.activeElement.blur());
     for (let i = 0; i < 3; i++) {
       await counted.mouse.move(260, 700);
       await counted.mouse.down();
@@ -440,6 +449,107 @@ try {
       );
     });
     await wide.close();
+
+    // The puzzle. A tap twists the picture into rings; Escape or reduced
+    // motion makes it whole again; solving (here with the keyboard: Up/Down
+    // choose a ring, Enter turns it and the ring outside it) reveals the
+    // raymarched sculpture, which still settles to a still frame.
+    const game = await pageAt();
+    await settled(game);
+    const gameState = () => game.$eval('[data-artwork]', (el) => ({ ...el.dataset }));
+    const whole = await (await game.$('[data-artwork]')).screenshot();
+    const figure = await figurePoint(game, 0.3, 0.72);
+    await game.mouse.click(figure.x, figure.y);
+    assert.equal((await gameState()).game, 'puzzle');
+    assert.match((await gameState()).rings, /^[1-5]{3}$/, 'every ring starts out of place');
+    await settled(game);
+    assert.notDeepEqual(
+      await (await game.$('[data-artwork]')).screenshot(),
+      whole,
+      'the picture is visibly twisted',
+    );
+    // Dragging a ring turns it like a dial and it snaps to a step.
+    const ringsBefore = (await gameState()).rings;
+    const dial = await game.$eval('.artwork-image', (el) => {
+      const b = el.getBoundingClientRect();
+      const scale = Math.min(b.width / el.naturalWidth, b.height / el.naturalHeight);
+      const w = el.naturalWidth * scale;
+      const h = el.naturalHeight * scale;
+      const x = b.x + (b.width - w) / 2;
+      const y = b.y + (b.height - h) / 2;
+      return { x: x + 0.53 * w, y: y + 0.51 * h, r: 0.38 * h };
+    });
+    await game.mouse.move(dial.x, dial.y - dial.r);
+    await game.mouse.down();
+    for (let k = 1; k <= 8; k++) {
+      const a = -Math.PI / 2 + (k / 8) * 1.2;
+      await game.mouse.move(dial.x + Math.cos(a) * dial.r, dial.y + Math.sin(a) * dial.r);
+    }
+    await game.mouse.up();
+    const ringsAfter = (await gameState()).rings;
+    assert.equal(ringsAfter.slice(0, 2), ringsBefore.slice(0, 2), 'only the dragged ring turns');
+    assert.equal(
+      Number(ringsAfter[2]),
+      (Number(ringsBefore[2]) + 1) % 6,
+      'a clockwise drag turns one step',
+    );
+    await game.focus('.artwork-touch');
+    await game.keyboard.press('Escape');
+    assert.equal((await gameState()).game, 'whole');
+    assert.equal((await gameState()).rings, '000');
+    await game.keyboard.press('Enter');
+    assert.equal((await gameState()).game, 'puzzle');
+    let rings = (await gameState()).rings.split('').map(Number);
+    for (let ring = 0; ring < 3; ring++) {
+      while (rings[ring] !== 0) {
+        await game.keyboard.press('Enter');
+        rings = (await gameState()).rings.split('').map(Number);
+      }
+      if (ring < 2) await game.keyboard.press('ArrowUp');
+    }
+    await game.waitForFunction(
+      () => document.querySelector('[data-artwork]').dataset.game === 'revealed',
+      { timeout: 120000 },
+    );
+    await game.screenshot({ path: '.qa/game-revealed.jpg', quality: 90 });
+    await settled(game);
+    const revealedFrame = await pixels(
+      game,
+      await game.$eval('.artwork-image', (el) => {
+        const box = el.getBoundingClientRect();
+        return { x: box.x, y: box.y, width: box.width, height: box.height };
+      }),
+    );
+    assert.ok(
+      revealedFrame.some((value, i) => i % 3 === 0 && value < 200),
+      'the new sculpture is drawn',
+    );
+    await sleep(500);
+    const again = await pixels(
+      game,
+      await game.$eval('.artwork-image', (el) => {
+        const box = el.getBoundingClientRect();
+        return { x: box.x, y: box.y, width: box.width, height: box.height };
+      }),
+    );
+    assert.equal(
+      changed(revealedFrame, again),
+      0,
+      'the revealed sculpture settles to a still frame',
+    );
+    await game.close();
+
+    // Reduced motion abandons a puzzle in progress.
+    const quiet = await pageAt();
+    await settled(quiet);
+    const quietFigure = await figurePoint(quiet, 0.3, 0.72);
+    await quiet.mouse.click(quietFigure.x, quietFigure.y);
+    assert.equal(await quiet.$eval('[data-artwork]', (el) => el.dataset.game), 'puzzle');
+    await quiet.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+    await quiet.waitForFunction(
+      () => document.querySelector('[data-artwork]').dataset.game === 'whole',
+    );
+    await quiet.close();
 
     // Without WebGL2 the authored image responds and the SVG trail invites.
     const fallback = await pageAt(1487, 1058, { fallback: true });
@@ -675,7 +785,7 @@ try {
     await plain.close();
     assert.deepEqual(errors, [], 'no application errors or broken requests');
     console.log(
-      'Browser checks passed: WebGL2 light field, swarm wake and settling, heading play without layout shift, discovery levels, hold/burst, keyboard loop, clean Escape, no stranded Space hold, pointer loop, tilt, tremor and drift, a single frame loop, wide-window canvas resize, live reduced motion, context recovery, image fallback with trail and pen hover, responsive layouts, touch drag and scrolling, no-JS, merch without layout shift, product light and lamp, prism filters and lens, dealt shuffle, constellation, reduced-motion merch, product tint and gallery. Screenshots: .qa/',
+      'Browser checks passed: WebGL2 light field, swarm wake and settling, heading play without layout shift, discovery levels, hold/burst, keyboard loop, sculpture puzzle and 3D reveal, clean Escape, no stranded Space hold, pointer loop, tilt, tremor and drift, a single frame loop, wide-window canvas resize, live reduced motion, context recovery, image fallback with trail and pen hover, responsive layouts, touch drag and scrolling, no-JS, merch without layout shift, product light and lamp, prism filters and lens, dealt shuffle, constellation, reduced-motion merch, product tint and gallery. Screenshots: .qa/',
     );
   }
 } finally {

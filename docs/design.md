@@ -22,6 +22,12 @@ Visibility rules: stirred motes must be easy to see. On paper use deep chromatic
 
 Small rewards: the mark turns playfully on hover, link arrows launch and return, the tagline's orange comparison sign pops on hover. All of them are finite.
 
+## The puzzle
+
+The sculpture is also a wordless puzzle that a child can read. Hover it and its rings show their seams and jiggle, loose like dials. Touch it and the rings twist out of place and lose their colour. Each ring carries an orange bead, and an orange marker at the top shows where the beads belong: line them up. Tap a ring to turn it a step, or drag it round. Each ring clicks and blooms back into colour when its bead is home. When the picture is whole again, it comes apart into the swarm, the billion small brains, and they build something the flat picture could only suggest: the two loops as real, turning 3D objects of glass and ceramic, refracting each other. "Upgraded." flashes as it forms.
+
+Once the visitor has found the sculpture, the sparkles have done their job on the page. A few thousand of them live inside the sculpture instead, as warm golden fireflies: they drift along the loop, gather toward the pointer and turn back at the walls, in the picture, in the puzzle and in the revealed 3D rings. Stirring the empty page no longer raises sparkles.
+
 ## Cabinet of curiosities
 
 The merch pages treat the collection as objects on a lit table rather than tiles in a grid. A lamp follows the pointer (or rests mid-screen on phones and moves with tilt): every product turns toward it like a sunflower, catches glare where it reflects and casts a shadow away from it. The light takes on the colours of whatever the visitor looks at, measured from each product's own photo, so the Mondrian tee glows yellow and red, the Echoes of Light dress blue. On a product page the whole page is lit by that product and the buy button wears its colour.

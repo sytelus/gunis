@@ -401,6 +401,15 @@ em {
   user-select: none;
   -webkit-touch-callout: none;
 }
+/* During the sculpture puzzle a finger turns the rings like dials, so drags
+ * on the artwork do not scroll; the rest of the page scrolls as usual. */
+.is-puzzling .artwork,
+.is-puzzling .artwork-touch {
+  touch-action: none;
+}
+.is-puzzling .artwork-touch {
+  cursor: grab;
+}
 .artwork-touch:focus-visible {
   outline: 1.5px solid var(--accent);
   outline-offset: -10px;

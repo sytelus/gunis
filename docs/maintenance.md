@@ -62,6 +62,10 @@ The loop path in `src/data/loop-path.json` is shared by the map generator and th
 
 Inspect the social card at 1200 × 630, the mark at header and favicon sizes, and the hero at desktop and mobile crops. Avoid introducing external font requests or large animation libraries without evidence of a benefit.
 
+## Sculpture puzzle
+
+Rules live in `src/puzzle.ts` (rings, six positions, radii, centre, scramble) and are unit tested; the ring cut and dissolve are in the sculpture shader, and the second sculpture is `ORB_FS` with its geometry in `ORB` in `src/light-field.ts`. Tuning in `src/artwork.ts`: ring spring (170, damping 19), fireflies (`S.contain`: 7% of the swarm, tube 9.5% of the artwork width, 7.5% after the reveal), heal delay (`HEAL_AFTER`, 45 s), reveal timeline in `playGame` (dissolve 0.9–2.4 s, formation from 1.3 s, sculpture 1.4–3.6 s). If the artwork is replaced, re-check `CENTER` and `RADII` against the new picture. Shaders are minified at build time (comments and indentation removed) by the `guni-glsl` plugin in `vite.config.mjs`; keep `//` out of anything but comments. The JavaScript gate is 80 KB, raised from 60 KB for this feature (the owner does not treat script size as a constraint).
+
 ## Merch cabinet
 
 `src/cabinet.ts` owns the merch lamp, filters, shuffle, constellation and gallery; `scripts/palette.mjs` computes each product's light colours during generation (Sharp only, deterministic). Tuning:

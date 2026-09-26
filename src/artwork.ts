@@ -22,10 +22,12 @@ import { createHeadline } from './headline';
 import {
   createFieldState,
   createLightField,
+  projectOrb,
   type LightField,
   type LoopPoint,
   type Rect,
 } from './light-field';
+import { CENTER, RINGS, STEP, positionOf, ringAt, scramble, solved } from './puzzle';
 import mapsUrl from './assets/learning-loop-maps.png';
 import { points } from './data/loop-path.json';
 
@@ -43,6 +45,9 @@ const TIERS = [
   { pixels: 5.6e6, density: 1 / 55 },
 ];
 const LEVEL_SWARM = [0.72, 0.86, 1, 1.12];
+// An abandoned puzzle heals itself, so the resting page is the selected
+// design again. Solving is the only way to the second sculpture.
+const HEAL_AFTER = 45_000;
 
 type SensorPermission = { requestPermission?: () => Promise<string> };
 
@@ -127,11 +132,21 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
   canvas.setAttribute('aria-hidden', 'true');
   host.before(canvas);
   const tone = paperShift(image);
+  const ground = (
+    getComputedStyle(document.documentElement).backgroundColor.match(/[\d.]+/g) ?? [
+      '247',
+      '245',
+      '241',
+    ]
+  )
+    .slice(0, 3)
+    .map((value) => Number(value) / 255) as [number, number, number];
   const matte = maps ? readMatte(maps) : null;
   const makeField = () =>
     maps
       ? createLightField(canvas, image, maps, points as unknown as LoopPoint[], {
           paper: tone,
+          ground,
           floor: FLOOR,
         })
       : null;
@@ -208,6 +223,40 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
     distance: number;
   } | null = null;
 
+  /**
+   * The game. whole: the picture as authored. puzzle: the first touch twists
+   * it into rings; out-of-place rings lose their colour. reveal: once whole
+   * again, the picture comes apart into the swarm, which builds the second
+   * sculpture. revealed: a raymarched 3D sculpture that turns with the hand.
+   */
+  const game = {
+    mode: 'whole' as 'whole' | 'puzzle' | 'reveal' | 'revealed',
+    rings: [0, 0, 0],
+    angle: [0, 0, 0],
+    target: [0, 0, 0],
+    velocity: [0, 0, 0],
+    aligned: [true, true, true],
+    vivid: [1, 1, 1],
+    cut: 0,
+    hover: -1,
+    selected: 0,
+    keyboard: false,
+    revealAt: 0,
+    routed: false,
+    exhaled: false,
+    yaw: 0.5,
+    yawVelocity: 0,
+    pitch: 0,
+    pulseAt: -100,
+    // A ring held by the pointer: turned by dragging, a tap if it hardly moved.
+    grab: null as null | { ring: number; from: number; target: number; moved: boolean },
+    hint: -1,
+    beads: 0,
+    fireflies: 0,
+  };
+  const orbPath = new Float32Array(64 * 3);
+  let healTimer = 0;
+
   const center = () => ({ x: art.x + art.w * 0.52, y: art.y + art.h * 0.5 });
   // The canvas's document offset is refreshed on resize, so pointer events
   // never force a layout query.
@@ -240,6 +289,7 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
       h,
     };
     field?.place(art);
+    if (game.routed) field?.route(projectOrb(art, game.yaw, game.pitch, orbPath));
     headline?.measure();
   }
   function updateCount() {
@@ -345,6 +395,7 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
     S.view[0] = S.lens[2] = S.flash[0] = S.light[2] = S.light[3] = S.glow[1] = 0;
     S.charge[2] = S.charge[3] = S.shake[2] = 0;
     S.glow[3] = -1;
+    settleGame();
     render(false);
     headline?.rest();
     tilt.base = null;
@@ -401,7 +452,8 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
 
     // Discovery: level 2 once play becomes a habit; level 3 by enough play.
     if (level === 1 && (taps >= 3 || bursts >= 1 || playTime >= 9 || shaken)) setLevel(2);
-    if (level === 2 && (bursts >= 3 || playTime >= 40)) upgrade();
+    if (level === 2 && (bursts >= 3 || playTime >= 40) && calmGame()) upgrade();
+    playGame(dt, still);
 
     put(S.step, dt, elapsed, calm, 0);
     put(S.pointer, pointer.x, pointer.y, pointer.px, pointer.py);
@@ -414,7 +466,8 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
       pointer.presence * still,
       level >= 2 ? Math.min(0.16, 0.05 + playTime * 0.003) : 0,
     );
-    put(S.field, still, !discovered && !inside ? 1 : 0, level >= 1 ? 1 : 0, form);
+    // Fireflies replace the loop-flow capture once the sculpture is found.
+    put(S.field, still, !discovered && !inside ? 1 : 0, level >= 1 && !discovered ? 1 : 0, form);
     if (!press.active || burstImpulse) {
       S.charge[2] = 0;
     } else {
@@ -539,8 +592,219 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
     flash = Math.max(flash, amount);
   }
 
+  // ---- The game -----------------------------------------------------------
+  const calmGame = () => game.mode === 'whole' || game.mode === 'revealed';
+  function show() {
+    root.dataset.game = game.mode;
+    root.dataset.rings = game.rings.join('');
+  }
+  /** Which ring the page point is on (-1 outside), in image heights. */
+  function ringUnder(x: number, y: number) {
+    return ringAt((x - art.x) / art.h - CENTER.x * (art.w / art.h), (y - art.y) / art.h - CENTER.y);
+  }
+  function ringPoint(ring: number) {
+    const r = [0.08, 0.22, 0.38][ring] * art.h;
+    return { x: art.x + CENTER.x * art.w, y: art.y + CENTER.y * art.h - r };
+  }
+  function armHeal() {
+    clearTimeout(healTimer);
+    healTimer = window.setTimeout(() => {
+      if (game.mode !== 'puzzle' || document.hidden) return armHeal();
+      // Turn every ring home the short way; no reward without solving.
+      game.rings = [0, 0, 0];
+      for (let i = 0; i < RINGS; i++)
+        game.target[i] = Math.round(game.angle[i] / (Math.PI * 2)) * Math.PI * 2;
+      game.mode = 'whole';
+      game.grab = null;
+      document.documentElement.classList.remove('is-puzzling');
+      show();
+      wake(3);
+    }, HEAL_AFTER);
+  }
+  function startPuzzle(x: number, y: number) {
+    game.mode = 'puzzle';
+    game.rings = scramble();
+    // A dramatic first twist: alternate directions, a full turn each.
+    for (let i = 0; i < RINGS; i++)
+      game.target[i] = -game.rings[i] * STEP + (i % 2 ? -1 : 1) * Math.PI * 2;
+    game.selected = 0;
+    document.documentElement.classList.add('is-puzzling');
+    show();
+    ripple(x, y, 1.2);
+    burst(x, y, 0.45, false);
+    armHeal();
+    wake(4);
+  }
+  /** Turns one ring by whole steps (positive is clockwise on screen). */
+  function turnRing(ring: number, steps = 1) {
+    game.target[ring] -= steps * STEP;
+    placeRing(ring);
+  }
+  function placeRing(ring: number) {
+    game.rings[ring] = positionOf(game.target[ring]);
+    const p = ringPoint(ring);
+    ripple(p.x, p.y, 0.6);
+    show();
+    armHeal();
+    wake();
+  }
+  /** The pointer's angle around the rings' centre; it grows clockwise. */
+  function angleAt(x: number, y: number) {
+    return Math.atan2(y - (art.y + CENTER.y * art.h), x - (art.x + CENTER.x * art.w));
+  }
+  function pulse(x: number, y: number) {
+    game.pulseAt = elapsed;
+    burst(x, y, 0.5, false);
+    wake();
+  }
+  function reveal() {
+    document.documentElement.classList.remove('is-puzzling');
+    game.mode = 'reveal';
+    game.revealAt = elapsed;
+    game.exhaled = false;
+    clearTimeout(healTimer);
+    show();
+    wake(9);
+  }
+  function orbPose() {
+    // The pointer's light and a phone's tilt lean the sculpture toward you.
+    return {
+      yaw: game.yaw + light.x * 0.55 + tilt.sx * 0.5,
+      pitch: -0.08 + light.y * 0.3 + tilt.sy * 0.3,
+    };
+  }
+  /** Advances the game one frame and writes its shader state. */
+  function playGame(dt: number, still: number) {
+    // Rings are sprung: quick, with a slight overshoot, like a turned dial.
+    for (let i = 0; i < RINGS; i++) {
+      const pull = (game.target[i] - game.angle[i]) * 170 - game.velocity[i] * 19;
+      game.velocity[i] += pull * dt;
+      game.angle[i] += game.velocity[i] * dt;
+      const home =
+        game.rings[i] === 0 &&
+        game.grab?.ring !== i &&
+        Math.abs(game.target[i] - game.angle[i]) < 0.04;
+      if (home && !game.aligned[i] && game.mode === 'puzzle') {
+        // Found its place: a click of light, and its colour blooms back.
+        const p = ringPoint(i);
+        ripple(p.x, p.y, 1);
+        burst(p.x, p.y, 0.3, false);
+      }
+      game.aligned[i] = home || game.mode === 'whole';
+      game.vivid[i] += ((game.aligned[i] ? 1 : 0) - game.vivid[i]) * (1 - Math.exp(-dt * 7));
+    }
+    const settledRings =
+      !game.grab && game.target.every((t, i) => Math.abs(t - game.angle[i]) < 0.02);
+    if (game.mode === 'puzzle' && solved(game.rings) && settledRings) reveal();
+    const r = elapsed - game.revealAt;
+    // Before the puzzle, hovering the figure shows its seams faintly and the
+    // ring under the pointer jiggles, loose like a dial: it can turn.
+    const hinting = game.mode === 'whole' && inside && hovering > 0.5 ? 0.35 : 0;
+    const cutGoal = game.mode === 'puzzle' || (game.mode === 'reveal' && r < 0.6) ? 1 : hinting;
+    const beadGoal = game.mode === 'puzzle' || (game.mode === 'reveal' && r < 0.6) ? 1 : 0;
+    game.beads += (beadGoal - game.beads) * (1 - Math.exp(-dt * 5));
+    S.orb[7] = game.beads;
+    game.fireflies += ((discovered ? 1 : 0) * still - game.fireflies) * (1 - Math.exp(-dt * 1.5));
+    put(
+      S.contain,
+      game.fireflies,
+      art.w * (game.routed ? 0.075 : 0.095),
+      0.07,
+      hovering * (inside || game.hover >= 0 || game.grab ? 1 : 0.35),
+    );
+    game.cut += (cutGoal - game.cut) * (1 - Math.exp(-dt * 6));
+    if (game.mode === 'whole' && game.hover >= 0 && game.hover !== game.hint && hinting) {
+      game.velocity[game.hover] += 2.2;
+    }
+    game.hint = hinting ? game.hover : -1;
+    if (game.mode === 'whole' && game.cut < 0.002 && settledRings) {
+      game.cut = 0;
+      for (let i = 0; i < RINGS; i++) game.angle[i] = game.target[i] = game.velocity[i] = 0;
+    }
+    if (game.mode === 'reveal') {
+      if (!game.exhaled && r >= 0.9) {
+        game.exhaled = true;
+        breathe(0.9, 1.3);
+      }
+      if (!game.routed && r >= 1.3) {
+        game.routed = true;
+        upgradeAt = -100; // the reveal is itself an upgrade
+        upgrade();
+      }
+      S.orb[0] = smoothstep(0.9, 2.4, r);
+      S.orb[1] = smoothstep(1.4, 3.6, r);
+      if (r >= 3.6) {
+        game.mode = 'revealed';
+        show();
+      }
+    }
+    if (game.routed) {
+      game.yawVelocity += (0.28 * still - game.yawVelocity) * (1 - Math.exp(-dt * 1.5));
+      game.yaw += game.yawVelocity * dt;
+      const pose = orbPose();
+      S.orb[2] = pose.yaw;
+      S.orb[3] = pose.pitch;
+      field?.route(projectOrb(art, pose.yaw, pose.pitch, orbPath));
+    }
+    const since = elapsed - game.pulseAt;
+    S.orb[4] = (since * 0.45) % 1;
+    S.orb[5] = since < 4 ? Math.exp(-since * 0.9) : 0;
+    S.orb[6] = tier > 0 ? 1 : 0;
+    put(S.rings, game.angle[0], game.angle[1], game.angle[2], game.cut);
+    put(
+      S.rings.subarray(4),
+      game.vivid[0],
+      game.vivid[1],
+      game.vivid[2],
+      game.mode !== 'puzzle' ? -1 : game.keyboard ? game.selected : game.hover,
+    );
+  }
+  /** Motion is settling: finish whatever the game was doing, instantly. */
+  function settleGame() {
+    for (let i = 0; i < RINGS; i++) {
+      game.angle[i] = game.target[i];
+      game.velocity[i] = 0;
+      game.aligned[i] = game.rings[i] === 0;
+      game.vivid[i] = game.aligned[i] ? 1 : 0;
+    }
+    if (game.mode === 'reveal') {
+      if (!game.routed) upgradeAt = -100;
+      game.routed = true;
+      game.mode = 'revealed';
+      show();
+    }
+    if (game.mode === 'whole') {
+      game.cut = 0;
+      for (let i = 0; i < RINGS; i++) game.angle[i] = game.target[i] = 0;
+    }
+    if (game.mode === 'puzzle') game.cut = 1;
+    game.beads = S.orb[7] = game.mode === 'puzzle' ? 1 : 0;
+    if (game.routed) {
+      S.orb[0] = S.orb[1] = 1;
+      const pose = orbPose();
+      S.orb[2] = pose.yaw;
+      S.orb[3] = pose.pitch;
+    }
+    S.orb[5] = 0;
+    put(S.rings, game.angle[0], game.angle[1], game.angle[2], game.cut);
+    put(S.rings.subarray(4), game.vivid[0], game.vivid[1], game.vivid[2], -1);
+  }
+  /** Escape or reduced motion abandons a puzzle: the picture is whole again. */
+  function abandonPuzzle() {
+    if (game.mode !== 'puzzle') return;
+    clearTimeout(healTimer);
+    game.mode = 'whole';
+    game.grab = null;
+    document.documentElement.classList.remove('is-puzzling');
+    game.rings = [0, 0, 0];
+    for (let i = 0; i < RINGS; i++) game.target[i] = game.angle[i] = game.velocity[i] = 0;
+    game.cut = 0;
+    show();
+  }
+
   function setPaused(value: boolean) {
     paused = value;
+    if (paused) abandonPuzzle();
     surface.disabled = paused;
     hint.hidden = paused;
     trail?.hide();
@@ -604,6 +868,12 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
     return now - exploration.started >= 1200 && exploration.distance >= 24;
   }
   function release() {
+    game.hover = -1;
+    if (game.grab) {
+      game.target[game.grab.ring] = Math.round(game.target[game.grab.ring] / STEP) * STEP;
+      placeRing(game.grab.ring);
+      game.grab = null;
+    }
     light.tx = light.ty = 0;
     pointer.presence = pointer.hover = 0;
     inside = false;
@@ -618,7 +888,7 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
     const dx = (p.x - c.x) / (art.w * 0.4);
     const dy = (p.y - c.y) / (art.h * 0.44);
     // The loop gesture follows the whole path, even across the header link.
-    if (loop.add(dx, dy, event.timeStamp)) upgrade();
+    if (loop.add(dx, dy, event.timeStamp) && calmGame()) upgrade();
     // Do not stir the swarm under navigation. Pointer Events also support
     // hovering pens; ordinary touch screens can only report actual contact.
     if ((event.target as Element).closest?.('a, button:not(.artwork-touch)')) {
@@ -647,8 +917,23 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
     light.tx = clamp((p.x - c.x) / (art.w * 0.75), -1, 1);
     light.ty = clamp((p.y - c.y) / (art.h * 0.75), -1, 1);
     if (press.active) {
+      // A sideways drag spins the revealed sculpture, with momentum.
+      if (game.routed && event.pointerType !== 'mouse') {
+        game.yawVelocity += ((p.x - press.x) / art.w) * 40;
+        game.yaw += ((p.x - press.x) / art.w) * 3;
+      } else if (game.routed) game.yaw += ((p.x - press.x) / art.w) * 3;
       press.x = p.x;
       press.y = p.y;
+    }
+    game.keyboard = false;
+    game.hover = game.mode === 'puzzle' || game.mode === 'whole' ? ringUnder(p.x, p.y) : -1;
+    if (game.grab) {
+      // Dragging turns the held ring with the pointer, like a dial.
+      let delta = angleAt(p.x, p.y) - game.grab.from;
+      delta = Math.atan2(Math.sin(delta), Math.cos(delta));
+      if (Math.abs(delta) > 0.1) game.grab.moved = true;
+      game.target[game.grab.ring] = game.grab.target - delta;
+      armHeal();
     }
     wake();
     const distance = Math.hypot(dx, dy);
@@ -694,15 +979,42 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
       y: pointer.y,
     });
     holding(true);
+    if (field && game.mode === 'puzzle') {
+      const ring = ringUnder(pointer.x, pointer.y);
+      if (ring >= 0) {
+        game.grab = {
+          ring,
+          from: angleAt(pointer.x, pointer.y),
+          target: game.target[ring],
+          moved: false,
+        };
+        game.hover = ring;
+        wake();
+        return;
+      }
+    }
     if (inside) {
+      taps++;
+      if (field && game.mode === 'whole') return startPuzzle(pointer.x, pointer.y);
+      if (game.routed) return pulse(pointer.x, pointer.y);
       ripple(pointer.x, pointer.y, 1);
       burst(pointer.x, pointer.y, 0.3, false);
-      taps++;
     }
   }
   function up(event: PointerEvent) {
     // A lifted finger no longer hovers anywhere.
     if (event.pointerType === 'touch') pointer.hover = 0;
+    const grab = game.grab;
+    if (grab && game.mode === 'puzzle') {
+      game.grab = null;
+      holding(false);
+      // A tap turns one step; a drag lets go on the nearest step.
+      if (!grab.moved) game.target[grab.ring] = grab.target - STEP;
+      else game.target[grab.ring] = Math.round(game.target[grab.ring] / STEP) * STEP;
+      placeRing(grab.ring);
+      return;
+    }
+    game.grab = null;
     if (!press.active || event.pointerId !== press.id) return;
     const seconds = held();
     holding(false);
@@ -767,6 +1079,7 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
     (event) => {
       if (paused) return;
       if (event.key === 'Escape') {
+        abandonPuzzle();
         activeUntil = elapsed;
         holding(false);
         trail?.hide();
@@ -784,6 +1097,24 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
         ArrowDown: [0, 0.3],
       };
       const direction = directions[event.key];
+      if (direction && game.mode === 'puzzle') {
+        event.preventDefault();
+        // Up and Down choose a ring; Left and Right (or Enter) turn it.
+        game.keyboard = true;
+        if (event.key === 'ArrowUp') game.selected = Math.min(RINGS - 1, game.selected + 1);
+        if (event.key === 'ArrowDown') game.selected = Math.max(0, game.selected - 1);
+        if (event.key === 'ArrowRight') turnRing(game.selected, 1);
+        if (event.key === 'ArrowLeft') turnRing(game.selected, -1);
+        wake();
+        return;
+      }
+      if (direction && game.routed) {
+        event.preventDefault();
+        game.yaw += direction[0] * 1.3;
+        light.ty = clamp(light.ty + direction[1], -1, 1);
+        wake();
+        return;
+      }
       if (direction) {
         event.preventDefault();
         discover();
@@ -822,10 +1153,18 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
       if (event.detail === 0) {
         discover();
         const c = center();
-        ripple(c.x, c.y, 1);
-        burst(c.x, c.y, 0.3, false);
+        if (!field || game.mode === 'whole') {
+          if (field) startPuzzle(c.x, c.y);
+          else {
+            ripple(c.x, c.y, 1);
+            burst(c.x, c.y, 0.3, false);
+          }
+          announcement.textContent = 'A new perspective. The light responds to your curiosity.';
+        } else if (game.mode === 'puzzle') {
+          game.keyboard = true;
+          turnRing(game.selected);
+        } else if (game.routed) pulse(c.x, c.y);
         wake();
-        announcement.textContent = 'A new perspective. The light responds to your curiosity.';
       } else requestSensors();
     },
     options,
@@ -955,9 +1294,11 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
   surface.hidden = false;
   release();
   setPaused(paused);
+  show();
   return () => {
     events.abort();
-    document.documentElement.classList.remove('is-holding', 'is-zoomed');
+    clearTimeout(healTimer);
+    document.documentElement.classList.remove('is-holding', 'is-zoomed', 'is-puzzling');
     sizeObserver.disconnect();
     cancelAnimationFrame(frame);
     trail?.destroy();

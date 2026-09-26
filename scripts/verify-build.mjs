@@ -47,7 +47,10 @@ const scripts = entries.filter((path) => extname(path) === '.js');
 const javascriptBytes = (
   await Promise.all(scripts.map((path) => stat(resolve(root, path))))
 ).reduce((total, info) => total + info.size, 0);
-if (javascriptBytes > 60_000) errors.push(`JavaScript budget exceeded: ${javascriptBytes} bytes`);
+// All shipped JavaScript, raw bytes. Raised from 60 KB for the sculpture
+// puzzle and raymarched reveal, then to 80 KB (September 2026); it guards against
+// accidental growth, so raise it only for a deliberate feature.
+if (javascriptBytes > 80_000) errors.push(`JavaScript budget exceeded: ${javascriptBytes} bytes`);
 if (errors.length) throw new Error(errors.join('\n'));
 console.log(
   `Verified ${htmlFiles.length} HTML files, internal links/assets, JSON-LD, and canonical domain. JavaScript: ${javascriptBytes.toLocaleString()} bytes.`,

@@ -19,6 +19,27 @@ export default defineConfig({
   server: { host: '0.0.0.0', allowedHosts: ['terminal.local'] },
   plugins: [
     {
+      name: 'guni-glsl',
+      // Shaders stay readable in src/light-field.ts: commented and indented
+      // template literals. Ship them without comments, indentation or blank
+      // lines. GLSL has no strings, so '//' always starts a comment.
+      transform(code, id) {
+        if (!id.endsWith('/src/light-field.ts')) return;
+        let inside = false;
+        const lines = [];
+        for (const line of code.split('\n')) {
+          const opened = inside;
+          if ((line.match(/`/g) ?? []).length % 2) inside = !inside;
+          if (!opened) lines.push(line);
+          else {
+            const stripped = line.includes('`') ? line.trim() : line.replace(/\/\/.*$/, '').trim();
+            if (stripped) lines.push(stripped);
+          }
+        }
+        return { code: lines.join('\n'), map: null };
+      },
+    },
+    {
       name: 'guni-static-pages',
       // The templates run in Node rather than in the browser. Regenerate their
       // HTML when authors edit copy or catalog data during local development.
