@@ -1,6 +1,7 @@
 import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { validateCatalog, productPath } from '../src/catalog.mjs';
+import { productPalette } from './palette.mjs';
 import {
   SITE,
   CONTACT,
@@ -23,6 +24,8 @@ async function write(path, content) {
 for (const p of products) {
   for (const image of [p.image, ...p.gallery.map((item) => item.image)])
     await access(resolve(root, 'public' + image));
+  // The merch lamp takes on each product's colours (scripts/palette.mjs).
+  p.palette = await productPalette(resolve(root, 'public' + p.image));
 }
 await write('index.html', homePage());
 await write('merch/index.html', merchPage(products));

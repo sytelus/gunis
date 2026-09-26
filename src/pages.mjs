@@ -95,8 +95,16 @@ export function homePage() {
   });
 }
 
+/** Presentation hooks only: the product's light colours for the merch lamp,
+ * and a shared view-transition name so its photo morphs between pages. */
+const glow = (product) =>
+  product.palette
+    ? ` style="--glow:${e(product.palette[0])};--glow2:${e(product.palette[1])}"`
+    : '';
+const morph = (product) => ` style="view-transition-name:product-${product.slug}"`;
+
 function productCard(product, index) {
-  return `<article class="product-card" data-category="${product.category}" data-slug="${product.slug}"><a class="product-art" href="${productPath(product)}"><img src="${e(product.image)}" alt="${e(product.name)}" width="600" height="750" loading="${index < 3 ? 'eager' : 'lazy'}" decoding="async"><span class="product-discover">Take a closer look ${icon('arrow-up-right')}</span></a><div class="product-meta"><span>${categories[product.category]}</span><span>${String(index + 1).padStart(2, '0')}</span></div><h2><a href="${productPath(product)}">${e(product.name)}</a></h2><p class="product-description">${e(product.description)}</p>${external(product.buyUrl, 'Buy on ' + product.vendor, 'buy-link')}</article>`;
+  return `<article class="product-card" data-category="${product.category}" data-slug="${product.slug}"${glow(product)}><a class="product-art" href="${productPath(product)}"><img src="${e(product.image)}" alt="${e(product.name)}" width="600" height="750" loading="${index < 3 ? 'eager' : 'lazy'}" decoding="async"${morph(product)}><span class="product-discover">Take a closer look ${icon('arrow-up-right')}</span></a><div class="product-meta"><span>${categories[product.category]}</span><span>${String(index + 1).padStart(2, '0')}</span></div><h2><a href="${productPath(product)}">${e(product.name)}</a></h2><p class="product-description">${e(product.description)}</p>${external(product.buyUrl, 'Buy on ' + product.vendor, 'buy-link')}</article>`;
 }
 
 export function merchPage(products) {
@@ -141,7 +149,7 @@ export function productPage(product) {
     description: product.description,
     path: productPath(product),
     className: 'page-product',
-    body: `<div class="content-shell">${header()}<main id="main"><a class="text-link back-link" href="/merch/">${icon('arrow-left')}Back to the curiosities</a><article class="product-detail"><div class="product-gallery"><img class="gallery-main" src="${e(product.image)}" alt="${e(product.name)}" width="600" height="750" fetchpriority="high" data-gallery-main>${images.length > 1 ? `<div class="gallery-thumbnails">${images.map((item, i) => `<a href="${e(item.image)}" class="gallery-thumbnail" data-gallery-src="${e(item.image)}" data-gallery-alt="${e(item.alt)}" aria-label="View ${e(item.alt)}" ${i === 0 ? 'aria-current="true"' : ''}><img src="${e(item.image)}" alt="" width="90" height="110" loading="lazy"></a>`).join('')}</div>` : ''}</div><div class="product-story"><p class="eyebrow">Side quests <span class="slash">/</span> ${categories[product.category]}</p><h1>${e(product.name)}</h1><p class="product-lead">${e(product.description)}</p>${external(product.buyUrl, 'Buy on ' + product.vendor, 'purchase-button')}<p class="purchase-note">Prices, options, shipping, and checkout at ${e(product.vendor)}.</p><details class="product-specs"><summary>The details ${icon('plus')}</summary><div class="prose">${markdown.render(product.details)}</div></details></div></article><aside class="product-outro"><p>Curiosity looks good on you.</p><a class="text-link" href="/merch/">Keep exploring ${icon('arrow-right')}</a></aside></main>${footer()}</div>`,
+    body: `<div class="content-shell">${header()}<main id="main"><a class="text-link back-link" href="/merch/">${icon('arrow-left')}Back to the curiosities</a><article class="product-detail"${glow(product)}><div class="product-gallery"><img class="gallery-main" src="${e(product.image)}" alt="${e(product.name)}" width="600" height="750" fetchpriority="high" data-gallery-main${morph(product)}>${images.length > 1 ? `<div class="gallery-thumbnails">${images.map((item, i) => `<a href="${e(item.image)}" class="gallery-thumbnail" data-gallery-src="${e(item.image)}" data-gallery-alt="${e(item.alt)}" aria-label="View ${e(item.alt)}" ${i === 0 ? 'aria-current="true"' : ''}><img src="${e(item.image)}" alt="" width="90" height="110" loading="lazy"></a>`).join('')}</div>` : ''}</div><div class="product-story"><p class="eyebrow">Side quests <span class="slash">/</span> ${categories[product.category]}</p><h1>${e(product.name)}</h1><p class="product-lead">${e(product.description)}</p>${external(product.buyUrl, 'Buy on ' + product.vendor, 'purchase-button')}<p class="purchase-note">Prices, options, shipping, and checkout at ${e(product.vendor)}.</p><details class="product-specs"><summary>The details ${icon('plus')}</summary><div class="prose">${markdown.render(product.details)}</div></details></div></article><aside class="product-outro"><p>Curiosity looks good on you.</p><a class="text-link" href="/merch/">Keep exploring ${icon('arrow-right')}</a></aside></main>${footer()}</div>`,
     schema: {
       '@context': 'https://schema.org',
       '@type': 'Product',

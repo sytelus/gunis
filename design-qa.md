@@ -1,5 +1,17 @@
 # Design QA
 
+## Cabinet of curiosities revision — September 25, 2026
+
+Owner request: make the merch page's UX fun and awe-inspiring, with novel ideas. Presentation only: products, copy, links, filters and purchase paths are unchanged, and everything works without JavaScript.
+
+- **Lamp and product light.** A pointer-following lamp lights the collection; products turn toward it, catch glare and cast shadows away from it, and the page takes on the colours of the product being looked at (build-time palettes from each photo). Evidence: `docs/qa/cabinet-lamp.jpg`, `docs/qa/cabinet-phone.jpg`.
+- **Prism filters and lens.** Leaving products fly into the chosen filter and new ones stream out; the lens inverts labels exactly where it passes, even mid-slide (`docs/qa/cabinet-filter.jpg`, captured by pausing every animation at 300 ms).
+- **Dealt shuffle.** Photos gather into a pile and are dealt out; names wait in place (`docs/qa/cabinet-deal.jpg`).
+- **Constellation.** Discovering all eleven products assembles the Guni mark from product-coloured dots with ring lines (`docs/qa/cabinet-constellation.jpg`).
+- **Also.** Foil title, rolling count, product-coloured buy button (at least 4.99:1 contrast across all current products), photo-to-page morph, smoothly unfolding details, photos that develop on scroll.
+- **Checks.** Unit tests cover the palette extraction (garment and print colours, grey fallback, skin rejection). Browser checks cover zero layout shift while the cabinet loads, product light and lamp tilt, filter flights and lens placement, the dealt shuffle leaving no residue, constellation completion, instant reduced-motion filtering, product-page tint, the gallery and the no-JS collection. The JavaScript gate holds at about 52 KB.
+- **Limits.** As before, checks ran in Chromium (SwiftShader and llvmpipe). Cross-document view transitions, `interpolate-size` and scroll-driven animations are progressive: Safari and Firefox support differs and falls back to plain navigation, instant details and static photos.
+
 ## Living light revision — September 25, 2026
 
 Owner request: make the landing page's style, theme and animation far more intriguing, surprising and playful, optimized for wide screens, iPhone, iPad and Mac, using the GPU, without adding, changing or removing any text or links. Leading visitors to discovery, serendipity through hover and device tilt, and ongoing play with anticipated surprises were the stated priorities.

@@ -22,6 +22,14 @@ Visibility rules: stirred motes must be easy to see. On paper use deep chromatic
 
 Small rewards: the mark turns playfully on hover, link arrows launch and return, the tagline's orange comparison sign pops on hover. All of them are finite.
 
+## Cabinet of curiosities
+
+The merch pages treat the collection as objects on a lit table rather than tiles in a grid. A lamp follows the pointer (or rests mid-screen on phones and moves with tilt): every product turns toward it like a sunflower, catches glare where it reflects and casts a shadow away from it. The light takes on the colours of whatever the visitor looks at, measured from each product's own photo, so the Mondrian tee glows yellow and red, the Echoes of Light dress blue. On a product page the whole page is lit by that product and the buy button wears its colour.
+
+Filters work like a prism: the collection pours into the chosen filter and the chosen products stream out of it, while an ink lens slides between filters and inverts the labels it passes over. "Surprise me" gathers the photos into a pile and deals them out again. Eleven dots after the collection count light up in each product's colour as it is discovered; the complete set flies into the Guni mark and its rings draw themselves through the dots. The collection title catches the lamp like foil. Photos develop like prints as they scroll into view, and a product's photo carries over into its page.
+
+Rules: light must stay subtle enough that product photography remains accurate (glare tops out below half strength; the lamp pool never exceeds 58% of the colour at its centre). Only decorative layers move; real content never waits for an animation.
+
 ## Typography and tokens
 
 | Element          | Choice                           | Purpose                                                      |

@@ -62,6 +62,22 @@ The loop path in `src/data/loop-path.json` is shared by the map generator and th
 
 Inspect the social card at 1200 × 630, the mark at header and favicon sizes, and the hero at desktop and mobile crops. Avoid introducing external font requests or large animation libraries without evidence of a benefit.
 
+## Merch cabinet
+
+`src/cabinet.ts` owns the merch lamp, filters, shuffle, constellation and gallery; `scripts/palette.mjs` computes each product's light colours during generation (Sharp only, deterministic). Tuning:
+
+| Knob                          | Where         | Current value                                                      |
+| ----------------------------- | ------------- | ------------------------------------------------------------------ |
+| Turn toward the lamp          | `cabinet.ts`  | 8° around the vertical axis, 6° around the horizontal, over 800 px |
+| Glare, shadow                 | `cabinet.ts`  | glare up to 0.45; shadow offset up to 16 px                        |
+| Resting lamp on touch screens | `cabinet.ts`  | `REST` = 0.85                                                      |
+| Lamp pool strength            | `styles.css`  | 34%, 58% while a product is looked at (`is-tinted`)                |
+| Filter flights, deal          | `cabinet.ts`  | 520 ms out, 760 ms in (45 ms stagger), 1.5 s deal                  |
+| Discovery                     | `cabinet.ts`  | 1.2 s at 60% in view, 0.45 s hover, or focus                       |
+| Palette sampling              | `palette.mjs` | centre torso crop; skin and greys ignored; fallback brand accent   |
+
+Flying copies are `.product-card` clones with `.product-ghost`; count real products inside `.product-grid`. When adding a product, check its generated `--glow` in `merch/index.html`; a photo with no vivid colour correctly falls back to the brand accent. If a new product's colour reads wrong, adjust the crop or thresholds in `palette.mjs` rather than hard-coding colours.
+
 ## Development checks
 
 ```sh
@@ -76,7 +92,7 @@ npm run test:browser
 
 The tests protect migration content, unsafe URL handling, HTML/JSON escaping, complete static content, redirects, the landing page's exact copy, links and accessible names, the sculpture map's 3-channel format, and the loop and arrow-key gesture recognizers (imported from TypeScript through Node's type stripping). The production verifier checks actual output routes, local links/assets, canonical metadata, JSON-LD, required Pages files and the JavaScript budget. These checks do not place orders or verify vendor stock.
 
-For a visible change, inspect the production preview at approximately 320/390 px, tablet width, and a desktop viewport. Check wrapping, scrolling, keyboard focus, filter/shuffle states, the gallery, purchase/contact destinations and console errors. `npm run test:browser` starts a temporary preview and runs Chromium checks with software WebGL2: the light field goes live, settled frames are pixel-identical, pointer movement makes motes visible and settling clears them, the split heading keeps its accessible name and exact box, letters swell and rest, a brief pass does not retire the invitation but exploration does, hold/release, keyboard activation, Escape, the rotating-arrow and drawn-loop upgrades, tilt and tremor rejection, live reduced motion, context loss/recovery, the image fallback with its SVG trail and pen hover, layouts from 320 px phones to 2560 px screens and phones held sideways, touch drags that stay on the page, touch scrolling, no-JS content and merch/gallery navigation. It writes screenshots under `.qa/` and closes the browser/server. Physical Safari/iOS, real GPUs, motion sensors and hovering touch hardware still need device checks. For realistic frame rates on a Linux workstation, Chromium can also run Mesa's llvmpipe with `--enable-gpu --ignore-gpu-blocklist --use-gl=angle --use-angle=vulkan`. No browser-test code is bundled into the site.
+For a visible change, inspect the production preview at approximately 320/390 px, tablet width, and a desktop viewport. Check wrapping, scrolling, keyboard focus, filter/shuffle states, the gallery, purchase/contact destinations and console errors. `npm run test:browser` starts a temporary preview and runs Chromium checks with software WebGL2: the light field goes live, settled frames are pixel-identical, pointer movement makes motes visible and settling clears them, the split heading keeps its accessible name and exact box, letters swell and rest, a brief pass does not retire the invitation but exploration does, hold/release, keyboard activation, Escape, the rotating-arrow and drawn-loop upgrades, tilt and tremor rejection, live reduced motion, context loss/recovery, the image fallback with its SVG trail and pen hover, layouts from 320 px phones to 2560 px screens and phones held sideways, touch drags that stay on the page, touch scrolling, no-JS content, and the merch cabinet: no layout shift while it loads, product light and the lamp, prism filters and lens, the dealt shuffle, the constellation, reduced-motion filtering, product-page tint and gallery navigation. It writes screenshots under `.qa/` and closes the browser/server. Physical Safari/iOS, real GPUs, motion sensors and hovering touch hardware still need device checks. For realistic frame rates on a Linux workstation, Chromium can also run Mesa's llvmpipe with `--enable-gpu --ignore-gpu-blocklist --use-gl=angle --use-angle=vulkan`. No browser-test code is bundled into the site.
 
 For dependency updates, update the lockfile deliberately, rebuild, and test the affected behavior. Formatting is controlled by `.prettierrc.json`; generated output, binaries and QA images are excluded.
 

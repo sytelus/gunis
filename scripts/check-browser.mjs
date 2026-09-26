@@ -557,20 +557,125 @@ try {
     );
     await touch.close();
 
+    // The merch cabinet. The collection must not shift while it loads: the
+    // toolbar's space is reserved for browsers that run scripts.
     const merch = await browser.newPage();
     merch.on('pageerror', (error) => errors.push(error.message));
+    await merch.evaluateOnNewDocument(() => {
+      window.qaShift = 0;
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries())
+          if (!entry.hadRecentInput) window.qaShift += entry.value;
+      }).observe({ type: 'layout-shift', buffered: true });
+    });
+    await merch.setViewport({ width: 1440, height: 900, deviceScaleFactor: 1 });
     await merch.goto(`${origin}/merch/`, { waitUntil: 'networkidle0' });
+    await merch.waitForSelector('.catalog-toolbar:not([hidden])');
     assert.equal(await merch.$$eval('.product-card', (els) => els.length), 11);
+    assert.ok(
+      (await merch.evaluate(() => window.qaShift)) < 0.01,
+      'the collection does not shift while the cabinet loads',
+    );
+    // Every product has its own light colours and a unique morph name.
+    const cards = await merch.$$eval('.product-card', (els) =>
+      els.map((card) => ({
+        glow: card.style.getPropertyValue('--glow'),
+        name: card.querySelector('img').style.viewTransitionName,
+      })),
+    );
+    assert.ok(cards.every((card) => /^#[0-9a-f]{6}$/.test(card.glow)));
+    assert.equal(new Set(cards.map((card) => card.name)).size, 11);
+    // The lamp turns products toward the pointer and tints the page with the
+    // colours of the product under it.
+    const mondrian = await merch.$eval('[data-slug="mondrian-world-map"] .product-art', (el) => {
+      el.scrollIntoView({ block: 'center' });
+      const box = el.getBoundingClientRect();
+      return { x: box.x + box.width / 2, y: box.y + box.height / 3 };
+    });
+    await merch.mouse.move(mondrian.x - 200, mondrian.y);
+    await merch.mouse.move(mondrian.x, mondrian.y, { steps: 6 });
+    await merch.waitForFunction(
+      () =>
+        document.documentElement.classList.contains('is-tinted') &&
+        getComputedStyle(document.querySelector('[data-slug="impossible-cup"]'))
+          .getPropertyValue('--ry')
+          .trim() !== '0.00deg',
+    );
+    assert.equal(
+      await merch.evaluate(() => document.documentElement.style.getPropertyValue('--lamp-color')),
+      cards[2].glow,
+    );
+    // Filters: products leave into the chosen filter and the lens follows it.
     await merch.click('[data-filter="dresses"]');
-    assert.equal(await merch.$$eval('.product-card:not([hidden])', (els) => els.length), 3);
+    assert.equal(
+      await merch.$$eval('.product-grid .product-card:not([hidden])', (els) => els.length),
+      3,
+    );
+    assert.equal(await merch.$eval('[data-count]', (el) => el.textContent), '3');
+    assert.match(merch.url(), /collection=dresses/);
+    assert.ok((await merch.$$('.product-ghost')).length > 0, 'leaving products fly out');
+    await merch.waitForFunction(() => !document.querySelector('.product-ghost'));
+    assert.ok(
+      await merch.$eval('.filter-lens', (lens) => {
+        const pressed = document.querySelector('[data-filter][aria-pressed="true"]');
+        return lens.style.getPropertyValue('--x') === `${pressed.offsetLeft}px`;
+      }),
+      'the lens settles on the pressed filter',
+    );
+    await merch.click('[data-filter="all"]');
+    // Surprise me deals a new order and leaves no animation residue.
+    const order = () =>
+      merch.$$eval('.product-grid .product-card:not([hidden])', (els) =>
+        els.map((el) => el.dataset.slug),
+      );
+    const dealt = await order();
+    await merch.click('.shuffle-button');
+    assert.notDeepEqual(await order(), dealt);
+    await merch.waitForFunction(
+      () =>
+        document.getAnimations().filter((a) => a.timeline instanceof DocumentTimeline).length === 0,
+      { timeout: 20000 },
+    );
+    assert.equal(await merch.$$eval('.product-card[style*="z-index"]', (els) => els.length), 0);
+    // Discovering every product assembles the constellation into the mark.
+    for (const link of await merch.$$('.product-card .product-art')) await link.focus();
+    await merch.waitForFunction(() =>
+      document.querySelector('.constellation').classList.contains('is-complete'),
+    );
+    assert.equal(await merch.$$eval('.constellation i.is-lit', (els) => els.length), 11);
+    await merch.screenshot({ path: '.qa/merch.jpg', quality: 90 });
+    // Reduced motion: changes are instant, nothing flies.
+    await merch.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }]);
+    await merch.click('[data-filter="tees"]');
+    assert.equal((await merch.$$('.product-ghost')).length, 0);
+    assert.equal(
+      await merch.$$eval('.product-grid .product-card:not([hidden])', (els) => els.length),
+      7,
+    );
+    await merch.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'no-preference' }]);
+    // The product page is lit in the product's own colour; the gallery still works.
     await merch.goto(`${origin}/merch/impossible-cup/`, { waitUntil: 'networkidle0' });
+    await merch.waitForFunction(() => document.documentElement.classList.contains('is-tinted'));
     await merch.click('[data-gallery-src]');
     assert.ok(
       await merch.$eval('[data-gallery-src]', (el) => el.getAttribute('aria-current') === 'true'),
     );
+    // Without JavaScript the collection is complete and the toolbar stays hidden.
+    const plain = await browser.newPage();
+    await plain.setJavaScriptEnabled(false);
+    await plain.goto(`${origin}/merch/`, { waitUntil: 'networkidle0' });
+    assert.equal(
+      await plain.$$eval('.product-grid .product-card:not([hidden])', (els) => els.length),
+      11,
+    );
+    assert.equal(
+      await plain.$eval('.catalog-toolbar', (el) => getComputedStyle(el).display),
+      'none',
+    );
+    await plain.close();
     assert.deepEqual(errors, [], 'no application errors or broken requests');
     console.log(
-      'Browser checks passed: WebGL2 light field, swarm wake and settling, heading play without layout shift, discovery levels, hold/burst, keyboard loop, clean Escape, no stranded Space hold, pointer loop, tilt, tremor and drift, a single frame loop, wide-window canvas resize, live reduced motion, context recovery, image fallback with trail and pen hover, responsive layouts, touch drag and scrolling, no-JS, merch and gallery. Screenshots: .qa/',
+      'Browser checks passed: WebGL2 light field, swarm wake and settling, heading play without layout shift, discovery levels, hold/burst, keyboard loop, clean Escape, no stranded Space hold, pointer loop, tilt, tremor and drift, a single frame loop, wide-window canvas resize, live reduced motion, context recovery, image fallback with trail and pen hover, responsive layouts, touch drag and scrolling, no-JS, merch without layout shift, product light and lamp, prism filters and lens, dealt shuffle, constellation, reduced-motion merch, product tint and gallery. Screenshots: .qa/',
     );
   }
 } finally {

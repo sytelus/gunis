@@ -2,7 +2,7 @@
 
 The coming-soon website for [guni.ai](https://guni.ai): advancing learning technologies for humans and AI.
 
-**Learning Upgraded.** For humans. For AI. The footer carries “A billion small brains > one giga brain”. An interactive ceramic-and-glass sculpture pairs with an orange two-ring mark, Instrument Sans, and Instrument Serif. At rest the page is the calm selected design. On arrival the sculpture exhales a breath of light; after that, a hidden GPU swarm of “small brains” appears only where the visitor stirs it. The swarm leads the pointer to the sculpture, relights it, and then learns: holding gathers it, a tap splashes it, and drawing a loop around the sculpture (or swirling a phone) makes it trace the loop. Tilting a phone moves the light, the heading answers the hand, and everything settles back to stillness. A quiet **Merch** link opens the preserved product collection; **Say hello** opens [shital.com](https://shital.com).
+**Learning Upgraded.** For humans. For AI. The footer carries “A billion small brains > one giga brain”. An interactive ceramic-and-glass sculpture pairs with an orange two-ring mark, Instrument Sans, and Instrument Serif. At rest the page is the calm selected design. On arrival the sculpture exhales a breath of light; after that, a hidden GPU swarm of “small brains” appears only where the visitor stirs it. The swarm leads the pointer to the sculpture, relights it, and then learns: holding gathers it, a tap splashes it, and drawing a loop around the sculpture (or swirling a phone) makes it trace the loop. Tilting a phone moves the light, the heading answers the hand, and everything settles back to stillness. A quiet **Merch** link opens the preserved product collection, presented as a lit cabinet of curiosities: products turn toward a lamp that follows the pointer and glow in their own colours, filters work like a prism, "Surprise me" deals the collection like a deck, and discovering every product assembles the Guni mark. **Say hello** opens [shital.com](https://shital.com).
 
 ## Run locally
 
@@ -25,25 +25,27 @@ npm run preview
 
 This is a statically generated, multi-page site. Small Node templates generate complete HTML, then Vite bundles CSS and TypeScript. There is no client-side framework or application server. The landing page, every product, purchase links, and navigation work before JavaScript loads.
 
-| Location                               | Responsibility                                                       |
-| -------------------------------------- | -------------------------------------------------------------------- |
-| `src/pages.mjs`                        | HTML templates, visible copy, canonical URLs and structured metadata |
-| `src/data/products.json`               | All 11 original products, purchase URLs, descriptions and galleries  |
-| `src/catalog.mjs`                      | Catalog validation, URL conventions and escaping                     |
-| `src/styles.css`                       | Shared design tokens, typography and responsive layouts              |
-| `src/artwork.ts`                       | Input, discovery levels, sensors, settling and the image fallback    |
-| `src/light-field.ts`                   | WebGL2 sculpture relighting and transform-feedback mote swarm        |
-| `src/headline.ts`                      | Presentation-only heading play; real words stay for screen readers   |
-| `src/gestures.ts`                      | Pure loop and arrow-key gesture recognizers (unit tested)            |
-| `src/curiosity-trail.ts`               | SVG pointer invitation used only when WebGL2 is unavailable          |
-| `scripts/sculpture-maps.mjs`           | Derives the sculpture's matte, height and loop-path data map         |
-| `design/concepts/guni-linked-g-v4.png` | Selected Linked G concept, exported for headers and site icons       |
-| `src/main.ts`                          | Catalog filtering/shuffling and product gallery enhancement          |
-| `scripts/generate.mjs`                 | HTML generation, legacy redirects, sitemap and robots.txt            |
-| `scripts/verify-build.mjs`             | Deployment-artifact integrity and JavaScript size checks             |
-| `design/`                              | Selected visual reference and original generated brand assets        |
-| `public/`                              | Committed, optimized assets copied into the deployed site            |
-| `.github/workflows/pages.yml`          | Verification and GitHub Pages deployment                             |
+| Location                               | Responsibility                                                          |
+| -------------------------------------- | ----------------------------------------------------------------------- |
+| `src/pages.mjs`                        | HTML templates, visible copy, canonical URLs and structured metadata    |
+| `src/data/products.json`               | All 11 original products, purchase URLs, descriptions and galleries     |
+| `src/catalog.mjs`                      | Catalog validation, URL conventions and escaping                        |
+| `src/styles.css`                       | Shared design tokens, typography and responsive layouts                 |
+| `src/artwork.ts`                       | Input, discovery levels, sensors, settling and the image fallback       |
+| `src/light-field.ts`                   | WebGL2 sculpture relighting and transform-feedback mote swarm           |
+| `src/headline.ts`                      | Presentation-only heading play; real words stay for screen readers      |
+| `src/gestures.ts`                      | Pure loop and arrow-key gesture recognizers (unit tested)               |
+| `src/curiosity-trail.ts`               | SVG pointer invitation used only when WebGL2 is unavailable             |
+| `scripts/sculpture-maps.mjs`           | Derives the sculpture's matte, height and loop-path data map            |
+| `design/concepts/guni-linked-g-v4.png` | Selected Linked G concept, exported for headers and site icons          |
+| `src/main.ts`                          | Loads the artwork and the merch cabinet only on the pages that use them |
+| `src/cabinet.ts`                       | Merch lamp, prism filters, dealt shuffle, constellation and gallery     |
+| `scripts/palette.mjs`                  | Build-time light colours for each product, from its photo               |
+| `scripts/generate.mjs`                 | HTML generation, legacy redirects, sitemap and robots.txt               |
+| `scripts/verify-build.mjs`             | Deployment-artifact integrity and JavaScript size checks                |
+| `design/`                              | Selected visual reference and original generated brand assets           |
+| `public/`                              | Committed, optimized assets copied into the deployed site               |
+| `.github/workflows/pages.yml`          | Verification and GitHub Pages deployment                                |
 
 `dist/` and generated HTML are build outputs, intentionally excluded from Git. Edit their source files instead.
 
