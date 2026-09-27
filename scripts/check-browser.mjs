@@ -102,8 +102,8 @@ try {
       content: `
       .home-shell { padding: 0 55px; height: 630px; overflow: hidden; }
       .site-header { height: 120px; padding: 25px 0; }
-      .site-header > .text-link, .site-footer > a, .artwork-hint { display: none !important; }
-      .site-footer { position: absolute; left: 55px; right: 55px; bottom: 10px; min-height: 44px; justify-content: center; }
+      .site-nav, .hero-bar > a, .artwork-hint, .company, .page-home > .content-shell { display: none !important; }
+      .hero-bar { position: absolute; left: 55px; right: 55px; bottom: 10px; min-height: 44px; justify-content: center; }
       .footer-note { font-size: 21px; }
       .home-hero { min-height: 0; }
       .hero-copy { padding-top: 45px; padding-bottom: 0; }

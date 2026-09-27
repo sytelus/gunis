@@ -1,6 +1,6 @@
 # Guni
 
-The coming-soon website for [guni.ai](https://guni.ai): advancing learning technologies for humans and AI.
+The company website of [guni.ai](https://guni.ai), operated by GUNIS LLC: games and apps that help people learn faster and more deeply. First iPhone and iPad apps are in development.
 
 **Learning Upgraded.** For humans. For AI. The footer carries “A billion small brains > one giga brain”. An interactive ceramic-and-glass sculpture pairs with an orange two-ring mark, Instrument Sans, and Instrument Serif. At rest the page is the calm selected design. On arrival the sculpture exhales a breath of light; after that, a hidden GPU swarm of “small brains” appears only where the visitor stirs it. The swarm leads the pointer to the sculpture, relights it, and then learns: holding gathers it, a tap splashes it, and drawing a loop around the sculpture (or swirling a phone) makes it trace the loop. Tilting a phone moves the light, the heading answers the hand, and everything settles back to stillness. A touch on the sculpture twists it into linked rings: a wordless puzzle whose solution dissolves the picture into the swarm, which builds a second, raymarched 3D sculpture. A quiet **Merch** link opens the preserved product collection, presented as a lit cabinet of curiosities: products turn toward a lamp that follows the pointer and glow in their own colours, filters work like a prism, "Surprise me" deals the collection like a deck, and discovering every product assembles the Guni mark. **Say hello** opens [shital.com](https://shital.com).
 

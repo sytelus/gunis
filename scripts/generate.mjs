@@ -4,8 +4,10 @@ import { validateCatalog, productPath } from '../src/catalog.mjs';
 import { productPalette } from './palette.mjs';
 import {
   SITE,
-  CONTACT,
   homePage,
+  aboutPage,
+  contactPage,
+  privacyPage,
   merchPage,
   productPage,
   notFoundPage,
@@ -31,8 +33,9 @@ await write('index.html', homePage());
 await write('merch/index.html', merchPage(products));
 await write('404.html', notFoundPage());
 await write('portfolio/index.html', redirectPage('/merch/', 'Explore the curiosities'));
-await write('about/index.html', redirectPage('/', 'Discover Guni'));
-await write('contact/index.html', redirectPage(CONTACT, 'Say hello'));
+await write('about/index.html', aboutPage());
+await write('contact/index.html', contactPage());
+await write('privacy/index.html', privacyPage());
 for (const product of products) {
   await write(`merch/${product.slug}/index.html`, productPage(product));
   await write(
@@ -40,7 +43,7 @@ for (const product of products) {
     redirectPage(productPath(product), product.name),
   );
 }
-const paths = ['/', '/merch/', ...products.map(productPath)];
+const paths = ['/', '/about/', '/contact/', '/privacy/', '/merch/', ...products.map(productPath)];
 await write(
   'public/sitemap.xml',
   `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${paths.map((path) => `<url><loc>${SITE}${path}</loc></url>`).join('')}</urlset>`,

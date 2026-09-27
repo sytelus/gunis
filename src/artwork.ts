@@ -272,6 +272,9 @@ export async function mountArtwork(root: HTMLElement): Promise<() => void> {
     return matte.values[Math.floor(v * matte.h) * matte.w + Math.floor(u * matte.w)] > 127;
   }
   function measure() {
+    // The light field covers the first screen, not the company sections.
+    const tall = `${host.offsetHeight}px`;
+    if (canvas.style.height !== tall) canvas.style.height = tall;
     box = canvas.getBoundingClientRect();
     origin.x = box.left + scrollX;
     origin.y = box.top + scrollY;

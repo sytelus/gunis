@@ -6,6 +6,16 @@ The landing page, shared navigation/footer and metadata live in `src/pages.mjs`.
 
 The canonical URL is `SITE`; contact is `CONTACT`. A domain migration also requires `public/CNAME`, the manifest, deployment verification, DNS and GitHub Pages settings to be updated together. Changing the CNAME file alone is insufficient.
 
+## Company information (Apple enrollment)
+
+guni.ai is the public website of **GUNIS LLC**, which Apple's organization enrollment checks against the D-U-N-S record. Keep all of this true and in place:
+
+- Every page's footer names the operator exactly as registered: "guni.ai is operated by GUNIS LLC, a Washington limited liability company", with About, Contact, Privacy and Merch links (`legal()` in `src/pages.mjs`).
+- The homepage explains the company and its work below the hero, marks apps as in development (never "coming soon" as the main message) and links the contact page. `/about/` holds the company facts, `/contact/` the support and contact route (shital@guni.ai on the company domain), `/privacy/` the website privacy notice.
+- Company facts live once, in `COMPANY` in `src/pages.mjs`. Publish public-record facts only: no street address or phone number (a test enforces this). If a registered trade name, D-U-N-S address or app release changes, update `COMPANY`, the copy and the structured data together.
+- When an app ships, replace "in development" with its real status and add its App Store link and app-specific privacy policy; do not add download buttons before then.
+- The privacy notice must match reality: if analytics, cookies, forms or new third parties are ever added, update `/privacy/` in the same change.
+
 ## Products
 
 Edit `src/data/products.json`. Array order defines the default collection order; the inherited `order` field records the original storefront ordering but is not used as a second sort key.

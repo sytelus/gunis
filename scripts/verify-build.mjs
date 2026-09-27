@@ -12,8 +12,7 @@ for (const file of htmlFiles) {
   if (!html.includes('rel="canonical"') && !html.includes('rel=canonical'))
     errors.push(`${file}: missing canonical`);
   if (!/<html\s+lang=["']?en/.test(html)) errors.push(`${file}: missing language`);
-  if (/www\.gunis\.ai|Designed in Seattle|Gunis LLC/.test(html))
-    errors.push(`${file}: legacy branding`);
+  if (/www\.gunis\.ai|Designed in Seattle/.test(html)) errors.push(`${file}: legacy branding`);
   for (const match of html.matchAll(/(?:href|src)=["']([^"']+)["']/g)) {
     const url = match[1];
     if (!url.startsWith('/') || url.startsWith('//')) continue;
@@ -42,7 +41,7 @@ for (const file of ['CNAME', '.nojekyll', 'robots.txt', 'sitemap.xml', 'favicon.
   }
 }
 assert.equal((await readFile(resolve(root, 'CNAME'), 'utf8')).trim(), 'guni.ai');
-assert.equal(htmlFiles.length, 28, 'Expected canonical routes, legacy redirects, and 404');
+assert.equal(htmlFiles.length, 29, 'Expected canonical routes, legacy redirects, and 404');
 const scripts = entries.filter((path) => extname(path) === '.js');
 const javascriptBytes = (
   await Promise.all(scripts.map((path) => stat(resolve(root, path))))

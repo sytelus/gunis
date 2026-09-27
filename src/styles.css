@@ -166,7 +166,8 @@ em {
 .brand-mark {
   transition: transform 0.5s var(--ease);
 }
-.site-footer {
+.hero-bar,
+.footer-row {
   border-top: 1px solid var(--line);
   min-height: 84px;
   padding-bottom: env(safe-area-inset-bottom);
@@ -232,10 +233,13 @@ em {
   user-select: none;
 }
 .light-field {
+  /* Spans the first screen (artwork.ts sets its exact height); the company
+   * sections below are plain HTML. */
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 100%;
+  height: 100svh;
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.6s;
@@ -1074,6 +1078,240 @@ em {
   }
 }
 
+/* Company information (About, Contact, Privacy and the homepage sections
+ * below the hero). Plain, readable HTML in the site's editorial voice; the
+ * artwork and its play stay in the first screen. */
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 2.4vw, 34px);
+}
+.nav-link {
+  font-size: 16px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.nav-link:hover {
+  color: var(--accent);
+}
+.site-legal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 14px 0 max(22px, env(safe-area-inset-bottom));
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.site-legal nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 18px;
+}
+.site-legal a {
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+}
+.site-legal a:hover {
+  color: var(--accent);
+}
+.page-home .company,
+.page-home .content-shell {
+  position: relative;
+  z-index: 1;
+}
+.company {
+  padding-top: clamp(64px, 10vw, 140px);
+  padding-bottom: clamp(40px, 6vw, 80px);
+}
+.company-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 18px clamp(32px, 6vw, 110px);
+  padding: clamp(44px, 6vw, 84px) 0;
+  border-top: 1px solid var(--line);
+}
+.company-section > .eyebrow {
+  grid-column: 1 / -1;
+}
+.company-section h2,
+.company-intro h1 {
+  font-size: clamp(40px, 5.2vw, 84px);
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 1.02;
+}
+.company-section h2 em,
+.company-intro h1 em {
+  display: block;
+  font-size: 1.1em;
+  letter-spacing: -0.02em;
+}
+.company-lede p,
+.company-lead {
+  font-size: clamp(18px, 1.55vw, 23px);
+  line-height: 1.55;
+  letter-spacing: -0.015em;
+  max-width: 40ch;
+}
+.company-lede p + p {
+  margin-top: 16px;
+  color: var(--muted);
+}
+.company-section > .text-link {
+  grid-column: 2;
+  justify-self: start;
+}
+.projects {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(20px, 3vw, 40px);
+  margin-top: clamp(24px, 3vw, 44px);
+}
+.project {
+  padding: clamp(24px, 3vw, 40px);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgb(255 255 255 / 0.45);
+}
+.project-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef5833;
+}
+.project h3 {
+  font-size: clamp(24px, 2.2vw, 32px);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  margin: 18px 0 12px;
+}
+.project p:last-child {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #4d4a45;
+  max-width: 48ch;
+}
+.company-note {
+  grid-column: 1 / -1;
+  font-family: var(--display);
+  font-style: italic;
+  font-size: 19px;
+  color: #42413e;
+}
+.contact-mail {
+  font-size: clamp(22px, 2.4vw, 34px);
+  letter-spacing: -0.03em;
+}
+.company-section > .contact-mail {
+  grid-column: 2;
+  justify-self: start;
+}
+.company-page {
+  padding-bottom: clamp(60px, 8vw, 120px);
+}
+.company-intro {
+  padding: clamp(40px, 7vw, 100px) 0 clamp(28px, 4vw, 56px);
+}
+.company-intro .eyebrow {
+  margin-bottom: 22px;
+}
+.company-prose {
+  max-width: 68ch;
+  font-size: 17px;
+  color: #3e3b37;
+}
+.company-prose .company-lead {
+  color: var(--ink);
+  margin-bottom: 28px;
+}
+.company-prose h2 {
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  margin: 40px 0 12px;
+  color: var(--ink);
+}
+.company-prose a:not(.text-link) {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+.company-prose a:hover {
+  color: var(--accent);
+}
+.updated {
+  font-size: 13px;
+  color: var(--muted);
+}
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 12px 32px;
+  margin: 28px 0;
+  padding: 24px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.facts dt {
+  color: var(--muted);
+}
+.facts dd {
+  margin: 0;
+  color: var(--ink);
+}
+@media (max-width: 760px) {
+  .nav-work {
+    display: none;
+  }
+  .nav-link {
+    font-size: 14px;
+  }
+  .site-nav {
+    gap: 14px;
+  }
+  .company-section {
+    grid-template-columns: 1fr;
+  }
+  .company-section > .text-link,
+  .company-section > .contact-mail {
+    grid-column: 1;
+  }
+  .projects {
+    grid-template-columns: 1fr;
+  }
+  .facts {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .facts dd {
+    margin-bottom: 12px;
+  }
+  .site-legal {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+@media (max-width: 360px) {
+  .site-nav .nav-link {
+    display: none;
+  }
+}
+
 @media (min-width: 1600px) {
   .home-hero {
     min-height: min(740px, calc(100svh - 220px));
@@ -1114,7 +1352,8 @@ em {
   .page-home .footer-note {
     font-size: 22px;
   }
-  .page-home .site-footer {
+  .page-home .hero-bar,
+  .page-home .footer-row {
     min-height: 100px;
   }
   .page-home .headline-sans {
@@ -1164,7 +1403,8 @@ em {
   .footer-note {
     font-size: 17px;
   }
-  .site-footer .text-link {
+  .hero-bar .text-link,
+  .footer-row .text-link {
     font-size: 14px;
   }
 }
@@ -1296,19 +1536,22 @@ em {
   .artwork-hint .icon {
     width: 24px;
   }
-  .site-footer {
+  .hero-bar,
+  .footer-row {
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 0 12px;
     padding: 16px 0 max(22px, env(safe-area-inset-bottom));
     min-height: 100px;
   }
-  .site-footer .text-link,
+  .hero-bar .text-link,
+  .footer-row .text-link,
   .domain {
     font-size: 13px;
     min-height: 44px;
   }
-  .site-footer .icon {
+  .hero-bar .icon,
+  .footer-row .icon {
     width: 16px;
     height: 16px;
   }
@@ -1529,7 +1772,8 @@ em {
     animation-delay: 0.38s;
   }
   .page-home .site-header,
-  .page-home .site-footer {
+  .page-home .hero-bar,
+  .page-home .footer-row {
     animation: arrive 1.4s ease 0.15s both;
   }
   .page-home .launch-status > span::after {

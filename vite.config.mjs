@@ -11,6 +11,7 @@ const pages = [
   'portfolio/index.html',
   'about/index.html',
   'contact/index.html',
+  'privacy/index.html',
   ...products.flatMap(({ slug }) => [`merch/${slug}/index.html`, `portfolio/${slug}/index.html`]),
 ];
 

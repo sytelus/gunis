@@ -1,5 +1,9 @@
 # Design QA
 
+## Company website for Apple enrollment — September 27, 2026
+
+Apple Developer Support asked for "a valid company website" (public, functional, associated with the organization, not minimal or under construction). Research across Apple's documentation, Apple Developer Forums threads, Hacker News and developer guides (41 sources) found two checks: real content rather than a placeholder, and a visible link between the legal entity and the domain, plus a support/contact route. Changes: "Coming soon" became "First apps in development"; the homepage gained Our work, About and Contact sections below the untouched hero and artwork; every page names GUNIS LLC as the operator; new `/about/`, `/contact/` (support and contact on shital@guni.ai) and `/privacy/` pages; Organization structured data with legal name, founder and locality; the social card was re-rendered. The light-field canvas now covers only the first screen. No street address or phone is published. Checks: unit tests for operator, links, contact and no address leakage on every template; the full browser suite; 29 HTML pages verified.
+
 ## Puzzle clarity and fireflies — September 26, 2026
 
 Owner feedback: the sparkles distracted once the visitor had arrived, and the puzzle was not intuitive. Changes: after discovery, stirring the page raises no sparkles; 7% of the swarm become golden fireflies contained in the sculpture, drawn to the pointer (`docs/qa/fireflies.jpg`). The puzzle now shows its goal and actions: hover jiggle and seams, orange beads with a fixed marker (line them up), grey rings until home, independent rings, tap to turn a step or drag like a dial, Left/Right keys (`docs/qa/game-puzzle.jpg`). Browser checks add: no page sparkles after discovery, a drag turning exactly one ring one step, Escape leaving no beads behind (a bug the check caught). The JavaScript gate is now 80 KB at the owner's direction.

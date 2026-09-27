@@ -3,11 +3,12 @@
 ## Product boundaries
 
 - Canonical brand and URL: Guni, https://guni.ai.
-- Public purpose: advancing learning technologies for humans and AI. The product is intentionally unrevealed; do not invent features, launch dates, customers, partnerships or claims.
+- Public purpose: advancing learning technologies for humans and AI. First products: geometry puzzle games, then a math learning app, for iPhone and iPad. Do not invent features, launch dates, customers, partnerships or claims.
 - Keep the homepage concise and preserve the selected design in `design/selected-reference.png`.
 - Keep hosting on GitHub Pages. Do not introduce a backend, hosted form, tracker or different deployment provider without an explicit requirement.
-- Contact points to https://shital.com. Merch stays secondary and checkout remains on the original vendors.
-- Do not reintroduce Seattle, LLC or the former small-shop positioning.
+- The site is the public company website of **Gunis LLC** (Washington LLC), which operates the guni.ai brand. Every page names the operator and links About, Contact and Privacy; Apple's organization enrollment depends on this. Publish public-record facts only: no street address or phone number.
+- Contact is `/contact/` with shital@guni.ai; shital.com is the founder's site. Merch stays secondary and checkout remains on the original vendors.
+- Describe apps honestly as in development until they ship; never add launch dates, downloads, customers or claims that are not true. Do not reintroduce Seattle or the former small-shop positioning.
 
 ## Editing
 

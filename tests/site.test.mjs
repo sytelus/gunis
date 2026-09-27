@@ -2,7 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { validateCatalog, scriptJson, productPath } from '../src/catalog.mjs';
-import { homePage, merchPage, productPage, redirectPage } from '../src/pages.mjs';
+import {
+  aboutPage,
+  contactPage,
+  homePage,
+  merchPage,
+  notFoundPage,
+  privacyPage,
+  productPage,
+  redirectPage,
+} from '../src/pages.mjs';
 const products = JSON.parse(readFileSync(new URL('../src/data/products.json', import.meta.url)));
 
 test('all legacy products, buy destinations, and content survive migration', () => {
@@ -54,10 +63,10 @@ test('the landing and catalog have complete content without JavaScript', () => {
   assert.ok(home.includes('<em>Upgraded.</em>'));
   assert.ok(home.includes('<span>guni.ai</span>'));
   assert.ok(!home.includes('motion-controls'));
-  assert.ok(home.includes('href="https://shital.com"'));
+  assert.ok(home.includes('href="/contact/"'));
   assert.ok(home.includes('href="/merch/"'));
   assert.ok(home.includes('rel="canonical" href="https://guni.ai/"'));
-  assert.ok(!/Seattle|LLC|gunis\.ai|googletagmanager/i.test(home));
+  assert.ok(!/Seattle|www\.gunis\.ai|googletagmanager/i.test(home));
   const catalog = merchPage(products);
   for (const product of products) assert.ok(catalog.includes(`href="${productPath(product)}"`));
   assert.equal((catalog.match(/class="product-card"/g) ?? []).length, 11);
@@ -72,25 +81,45 @@ test('legacy redirects have a canonical destination and usable fallback link', (
   }
 });
 
-test('presentation work leaves the landing copy, links and accessible names unchanged', () => {
-  const body = homePage().slice(homePage().indexOf('<body'));
-  const text = body
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&gt;/g, '>')
-    .replace(/\s+/g, ' ')
-    .trim();
-  assert.equal(
-    text,
-    'Skip to content guni.ai Say hello (opens in a new tab) Learning Upgraded. For humans. For AI. Coming soon A little curiosity guni.ai A billion small brains > one giga brain Merch',
+test('every page identifies Gunis LLC and links About, Contact and Privacy', () => {
+  const pages = {
+    home: homePage(),
+    merch: merchPage(products),
+    product: productPage(products[0]),
+    about: aboutPage(),
+    contact: contactPage(),
+    privacy: privacyPage(),
+    missing: notFoundPage(),
+  };
+  for (const [name, html] of Object.entries(pages)) {
+    assert.ok(html.includes('guni.ai is operated by GUNIS LLC'), `${name} names the operator`);
+    for (const path of ['/about/', '/contact/', '/privacy/'])
+      assert.ok(html.includes(`href="${path}"`), `${name} links ${path}`);
+    // Public-record facts only: no street address or phone number.
+    assert.ok(!/268TH|98075|425-?785/i.test(html), `${name} publishes no address or phone`);
+  }
+  assert.ok(pages.contact.includes('href="mailto:shital@guni.ai"'));
+  assert.ok(pages.about.includes('Gunis LLC') && pages.about.includes('Shital Shah'));
+  assert.ok(pages.privacy.includes('Effective'));
+});
+
+test('the homepage keeps its hero and artwork while describing the company', () => {
+  const home = homePage();
+  assert.ok(!/Coming soon/i.test(home), 'no placeholder status');
+  assert.match(home, /First apps in development/);
+  assert.match(home, /id="work"/);
+  assert.match(home, /Geometry puzzle games/);
+  assert.ok(home.includes('<span class="headline-sans">Learning</span><em>Upgraded.</em>'));
+  const schema = JSON.parse(
+    home.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1],
   );
+  assert.equal(schema['@graph'][0].legalName, 'GUNIS LLC');
+  const body = home.slice(home.indexOf('<body'));
   assert.deepEqual(
-    [...body.matchAll(/<a [^>]*href="([^"]+)"/g)].map((match) => match[1]),
-    ['#main', '/', 'https://shital.com', '/', '/merch/'],
-  );
-  assert.deepEqual(
-    [...body.matchAll(/(?:aria-label|alt)="([^"]+)"/g)].map((match) => match[1]),
+    [...body.matchAll(/(?:aria-label|alt)="([^"]+)"/g)].map((match) => match[1]).slice(0, 4),
     [
       'guni.ai home',
+      'Primary',
       'Two interlocking loops of ivory ceramic and prismatic glass, a symbol of shared learning.',
       'Explore the learning loop. Move your pointer or touch to bend the light. Use arrow keys to explore, Enter to send a ripple, or Escape to settle the motion.',
     ],
