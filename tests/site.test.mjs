@@ -101,6 +101,11 @@ test('every page identifies Gunis LLC and links About, Contact and Privacy', () 
   assert.ok(pages.contact.includes('href="mailto:shital@guni.ai"'));
   assert.ok(pages.about.includes('Gunis LLC') && pages.about.includes('Shital Shah'));
   assert.ok(pages.privacy.includes('Effective'));
+  // The notice discloses its hosting and email providers, so it must not also
+  // claim that nothing is collected or shared.
+  assert.ok(!/collects no personal information|do not sell or share/i.test(pages.privacy));
+  assert.match(pages.privacy, /GitHub Pages/);
+  assert.match(pages.privacy, /Google Workspace, which processes messages on our behalf/);
 });
 
 test('the homepage keeps its hero and artwork while describing the company', () => {

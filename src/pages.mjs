@@ -327,17 +327,17 @@ export function privacyPage() {
     eyebrow: 'Privacy',
     heading: 'Privacy, <em>plainly.</em>',
     body: `<p class="company-lead">This notice explains how the guni.ai website, operated by ${COMPANY.legalName}, handles information. It covers this website only. Our apps will have their own privacy policies when they are released.</p>
-<p class="updated">Effective September 27, 2026</p>
+<p class="updated">Effective September 28, 2026</p>
 <h2>What we collect</h2>
 <p>This website has no accounts, forms, advertising or analytics, and it sets no cookies. Its animations run entirely in your browser: pointer movement, touch and, where you allow it, device tilt are used there to animate the page and are never sent to us.</p>
 <h2>Hosting</h2>
 <p>The site is hosted by GitHub Pages. Like any web host, GitHub receives technical information when your browser requests a page, such as your IP address, and may keep it for security and operations under the <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">GitHub Privacy Statement<span class="sr-only"> (opens in a new tab)</span></a>. We do not receive visitor logs from GitHub.</p>
 <h2>Email</h2>
-<p>If you email us, we receive your address and your message and use them only to reply and keep a record of our conversation. Our email is provided by Google Workspace. We do not sell or share your information, and we delete correspondence on request.</p>
+<p>If you email us, we receive your email address, your message and anything you choose to include, and we use them only to reply and to keep a record of our conversation. Our email is hosted by Google Workspace, which processes messages on our behalf as our service provider. We do not sell your information, and we do not disclose it to anyone else except where the law requires it. You can ask us to delete our correspondence with you.</p>
 <h2>Merchandise</h2>
 <p>Our merchandise is sold by Redbubble and Zazzle. When you follow a link to them, their own privacy policies and terms apply to anything you do there; we do not receive your payment details.</p>
 <h2>Children</h2>
-<p>This website collects no personal information from anyone, including children.</p>
+<p>Browsing this website does not require an account or submission of personal information. Hosting-related information and information you choose to send by email are handled as described above.</p>
 <h2>Changes and questions</h2>
 <p>If this notice changes, we will update it here with a new effective date. For any question or request about your information, contact ${COMPANY.legalName} at <a href="mailto:${COMPANY.email}">${COMPANY.email}</a>.</p>`,
   });
