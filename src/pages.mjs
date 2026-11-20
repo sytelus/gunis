@@ -1,7 +1,9 @@
 import MarkdownIt from 'markdown-it';
 import { categories, escapeHtml as e, productPath, scriptJson } from './catalog.mjs';
 
-export const SITE = 'https://guni.ai';
+const SITE_NAME = 'guni.ai';
+const SITE_ALTERNATE_NAME = 'Guni';
+export const SITE = `https://${SITE_NAME}`;
 /** The legal operator of guni.ai. Public-record facts only (Washington
  * Secretary of State); no street address or phone is published. */
 export const COMPANY = {
@@ -60,7 +62,7 @@ export function documentPage({
 <title>${e(title)}</title><meta name="description" content="${e(description)}">
 <link rel="canonical" href="${SITE}${path}"><meta name="theme-color" content="#f7f5f1">
 ${noindex ? '<meta name="robots" content="noindex,follow">' : '<meta name="robots" content="index,follow,max-image-preview:large">'}
-<meta property="og:type" content="website"><meta property="og:site_name" content="Guni">
+<meta property="og:type" content="website"><meta property="og:site_name" content="${SITE_NAME}">
 <meta property="og:title" content="${e(title)}"><meta property="og:description" content="${e(description)}"><meta property="og:url" content="${SITE}${path}">
 <meta property="og:image" content="${SITE}/assets/brand/social-cover.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Guni — interlocking ivory and prismatic glass loops, a symbol of shared learning.">
 <meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${e(title)}"><meta name="twitter:description" content="${e(description)}"><meta name="twitter:image" content="${SITE}/assets/brand/social-cover.jpg">
@@ -122,8 +124,9 @@ ${mail('contact-mail')}
         {
           '@type': 'WebSite',
           '@id': `${SITE}/#website`,
-          name: 'Guni',
-          url: SITE,
+          name: SITE_NAME,
+          alternateName: SITE_ALTERNATE_NAME,
+          url: `${SITE}/`,
           publisher: { '@id': `${SITE}/#organization` },
           inLanguage: 'en',
         },
@@ -230,8 +233,8 @@ function organization() {
   return {
     '@type': 'Organization',
     '@id': `${SITE}/#organization`,
-    name: 'guni.ai',
-    alternateName: 'Guni',
+    name: SITE_NAME,
+    alternateName: SITE_ALTERNATE_NAME,
     legalName: COMPANY.registeredName,
     url: SITE,
     logo: `${SITE}/assets/brand/guni-mark.png`,
